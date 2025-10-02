@@ -27,6 +27,8 @@ async function initTestDB() {
     console.log('Base de datos de test inicializada correctamente ✅');
   } catch (err) {
     console.error('Error al inicializar la base de datos de test:', err);
+    console.error('❌ Error al inicializar la base de datos de test:', err);
+    process.exit(1); // Salir con código de error si falla
   } finally {
     await connection.end();
   }
