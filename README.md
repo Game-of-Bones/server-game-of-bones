@@ -13,8 +13,9 @@ npm run init:db      # Development DB
 npm run init:test    # Test DB
 
 # 5️⃣ Run tests (optional)
+# This command runs all tests using Jest.
+# Make sure you have initialized the test database (step 4) before running the tests.
 npm test
 
 # 6️⃣ Start development server
 npm run dev
-

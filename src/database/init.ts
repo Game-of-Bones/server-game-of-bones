@@ -14,10 +14,6 @@ async function initDB() {
 
   // Crear conexión con la base de datos
   const connection = await mysql.createConnection({
-    host: 'localhost',
-    user: 'root',        // cambia por tu usuario
-    password: 'tu_pass', // cambia por tu contraseña
-    database: 'game_of_bones_app',
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
@@ -30,7 +26,8 @@ async function initDB() {
     await connection.query(schema);
     console.log('Base de datos inicializada correctamente ✅');
   } catch (err) {
-    console.error('Error al inicializar la base de datos:', err);
+    console.error('❌ Error al inicializar la base de datos:', err);
+    process.exit(1); // Salir con código de error si falla
   } finally {
     await connection.end();
   }
