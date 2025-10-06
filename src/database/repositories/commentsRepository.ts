@@ -1,4 +1,5 @@
-import { Pool, QueryResult } from 'pg';
+import { Pool } from 'mysql2/promise';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { Comment, CommentWithUser, CreateCommentDTO } from '../../models/Comment';
 
 export class CommentsRepository {
@@ -8,22 +9,26 @@ export class CommentsRepository {
   async create(data: CreateCommentDTO): Promise<Comment> {
     const query = `
       INSERT INTO comments (post_id, user_id, content)
-      VALUES ($1, $2, $3)
-      RETURNING *
+      VALUES (?, ?, ?)
     `;
-    
     const values = [data.post_id, data.user_id, data.content];
-    const result: QueryResult<Comment> = await this.pool.query(query, values);
-    
-    return result.rows[0];
+
+    const [result] = await this.pool.query<ResultSetHeader>(query, values);
+
+    const [rows] = await this.pool.query<Comment[] & RowDataPacket[]>(
+      'SELECT * FROM comments WHERE id = ?',
+      [result.insertId]
+    );
+
+    return rows[0];
   }
 
   // Obtener comentario por ID
   async findById(id: bigint): Promise<Comment | null> {
-    const query = 'SELECT * FROM comments WHERE id = $1';
-    const result: QueryResult<Comment> = await this.pool.query(query, [id]);
-    
-    return result.rows[0] || null;
+    const query = 'SELECT * FROM comments WHERE id = ?';
+    const [rows] = await this.pool.query<Comment[] & RowDataPacket[]>(query, [id]);
+
+    return rows[0] || null;
   }
 
   // Obtener comentario con información del usuario
@@ -32,14 +37,13 @@ export class CommentsRepository {
       SELECT 
         c.*,
         u.username,
-        u.email as user_email
+        u.email AS user_email
       FROM comments c
       INNER JOIN users u ON c.user_id = u.id
-      WHERE c.id = $1
+      WHERE c.id = ?
     `;
-    
-    const result: QueryResult<CommentWithUser> = await this.pool.query(query, [id]);
-    return result.rows[0] || null;
+    const [rows] = await this.pool.query<CommentWithUser[] & RowDataPacket[]>(query, [id]);
+    return rows[0] || null;
   }
 
   // Obtener todos los comentarios de un post
@@ -48,28 +52,25 @@ export class CommentsRepository {
       SELECT 
         c.*,
         u.username,
-        u.email as user_email
+        u.email AS user_email
       FROM comments c
       INNER JOIN users u ON c.user_id = u.id
-      WHERE c.post_id = $1
+      WHERE c.post_id = ?
       ORDER BY c.created_at DESC
-      LIMIT $2 OFFSET $3
+      LIMIT ? OFFSET ?
     `;
-    
-    const result: QueryResult<CommentWithUser> = await this.pool.query(
-      query, 
+    const [rows] = await this.pool.query<CommentWithUser[] & RowDataPacket[]>(
+      query,
       [postId, limit, offset]
     );
-    
-    return result.rows;
+    return rows;
   }
 
   // Contar comentarios de un post
   async countByPostId(postId: bigint): Promise<number> {
-    const query = 'SELECT COUNT(*) as count FROM comments WHERE post_id = $1';
-    const result = await this.pool.query(query, [postId]);
-    
-    return parseInt(result.rows[0].count, 10);
+    const query = 'SELECT COUNT(*) AS count FROM comments WHERE post_id = ?';
+    const [rows] = await this.pool.query<RowDataPacket[]>(query, [postId]);
+    return Number(rows[0].count);
   }
 
   // Obtener comentarios de un usuario
@@ -78,56 +79,51 @@ export class CommentsRepository {
       SELECT 
         c.*,
         u.username,
-        u.email as user_email
+        u.email AS user_email
       FROM comments c
       INNER JOIN users u ON c.user_id = u.id
-      WHERE c.user_id = $1
+      WHERE c.user_id = ?
       ORDER BY c.created_at DESC
-      LIMIT $2 OFFSET $3
+      LIMIT ? OFFSET ?
     `;
-    
-    const result: QueryResult<CommentWithUser> = await this.pool.query(
+    const [rows] = await this.pool.query<CommentWithUser[] & RowDataPacket[]>(
       query,
       [userId, limit, offset]
     );
-    
-    return result.rows;
+    return rows;
   }
 
   // Actualizar contenido de un comentario
   async update(id: bigint, content: string): Promise<Comment | null> {
-    const query = `
-      UPDATE comments 
-      SET content = $1
-      WHERE id = $2
-      RETURNING *
-    `;
-    
-    const result: QueryResult<Comment> = await this.pool.query(query, [content, id]);
-    return result.rows[0] || null;
+    const updateQuery = 'UPDATE comments SET content = ? WHERE id = ?';
+    await this.pool.query(updateQuery, [content, id]);
+
+    const [rows] = await this.pool.query<Comment[] & RowDataPacket[]>(
+      'SELECT * FROM comments WHERE id = ?',
+      [id]
+    );
+
+    return rows[0] || null;
   }
 
   // Eliminar un comentario
   async delete(id: bigint): Promise<boolean> {
-    const query = 'DELETE FROM comments WHERE id = $1 RETURNING id';
-    const result = await this.pool.query(query, [id]);
-    
-    return result.rowCount !== null && result.rowCount > 0;
+    const query = 'DELETE FROM comments WHERE id = ?';
+    const [result] = await this.pool.query<ResultSetHeader>(query, [id]);
+    return result.affectedRows > 0;
   }
 
   // Verificar si un usuario es el autor del comentario
   async isAuthor(commentId: bigint, userId: bigint): Promise<boolean> {
-    const query = 'SELECT id FROM comments WHERE id = $1 AND user_id = $2';
-    const result = await this.pool.query(query, [commentId, userId]);
-    
-    return result.rows.length > 0;
+    const query = 'SELECT id FROM comments WHERE id = ? AND user_id = ?';
+    const [rows] = await this.pool.query<RowDataPacket[]>(query, [commentId, userId]);
+    return rows.length > 0;
   }
 
   // Verificar si existe un post
   async postExists(postId: bigint): Promise<boolean> {
-    const query = 'SELECT id FROM posts WHERE id = $1';
-    const result = await this.pool.query(query, [postId]);
-    
-    return result.rows.length > 0;
+    const query = 'SELECT id FROM posts WHERE id = ?';
+    const [rows] = await this.pool.query<RowDataPacket[]>(query, [postId]);
+    return rows.length > 0;
   }
 }

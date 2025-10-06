@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { CommentsController } from '../controllers/commentsController';
 import { authenticate } from '../middleware/auth';
 import { validateCreateComment, validateUpdateComment } from '../middleware/commentValidation';
-import { Pool } from 'pg';
+import { Pool } from 'mysql2/promise';
+
 
 export function createCommentsRouter(pool: Pool): Router {
   const router = Router();
