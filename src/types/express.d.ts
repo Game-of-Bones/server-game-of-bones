@@ -8,15 +8,16 @@
  * no lo sabe por defecto. Este archivo se lo indica.
  */
 
-import { Request } from 'express';
-
 declare global {
   namespace Express {
     interface Request {
       user?: {
-        id: string;
+        id: number;
         role: string;
       };
     }
   }
 }
+
+// Esta línea es CRÍTICA - hace que el archivo sea un módulo
+export {};
