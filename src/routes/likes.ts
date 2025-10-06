@@ -3,7 +3,7 @@ import {
   getLikesByPostId,
   toggleLike,
 } from "../controllers/likesController";
-import { verifyToken } from "../middlewares/auth";
+import { verifyToken } from "../middleware/auth";
 
 const router = express.Router();
 
