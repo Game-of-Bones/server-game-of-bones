@@ -1,6 +1,7 @@
 import request from "supertest";
 import app from "../app";
 import database from "../database/client";
+import { exec } from "child_process";
 
 // Helper function to get a valid auth token
 const getAuthToken = async () => {
@@ -17,8 +18,10 @@ const getAuthToken = async () => {
 describe("Likes API", () => {
   let token: string;
 
-  // Before all tests, get an authentication token
-  beforeAll(async () => {
+  // Before each test, reset the database and get a token
+  beforeEach(async () => {
+    // Reset the test database before each test
+    await new Promise((resolve) => exec("npm run test:reset", resolve));
     token = await getAuthToken();
   });
 
