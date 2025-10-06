@@ -1,0 +1,1 @@
+// datos iniciales de prueba para poblar la base de datos, en este caso insertaría usuarios de ejemplo (un admin, un user normal)
