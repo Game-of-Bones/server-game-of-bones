@@ -1,3 +1,5 @@
+//Commented out by MariCarmen on 30 Sept 2025. To set up database sql. 
+/*
 {
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
@@ -41,4 +43,24 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   }
+}
+  */
+
+  {
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
