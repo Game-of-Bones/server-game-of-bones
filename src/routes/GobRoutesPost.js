@@ -1,6 +1,6 @@
 //Route método Post 
 import { Router } from "express";
-import { createFossil } from "../controllers/fossilController.js";
+import { createFossil } from "../controllers/GobControllerPost.js";
 
 const router = Router();
 

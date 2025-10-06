@@ -1,10 +1,10 @@
-import Fossil from "../models/Fossil.js";
+import Fossil from "../models/GobModelPost.js";
 
 // POST
 export const createFossil = async (req, res) => {
   try {
     const {
-      tittle,
+      title,
       summary,
       image_url,
       discovery_date,
@@ -18,7 +18,7 @@ export const createFossil = async (req, res) => {
     } = req.body;
 
     const newFossil = await Fossil.create({
-      tittle,
+      title,
       summary,
       image_url,
       discovery_date,

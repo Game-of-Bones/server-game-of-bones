@@ -1,5 +1,5 @@
 import express from "express";
-import fossilRoutes from "./routes/fossilRoutes.js";
+import fossilRoutes from "../routes/GobRoutesPost.js
 
 const app = express();
 
