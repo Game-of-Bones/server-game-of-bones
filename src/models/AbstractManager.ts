@@ -1,4 +1,4 @@
-import database from "./client";
+import database from "../database/client";
 
 // Abstract class for all managers
 export default abstract class AbstractManager {

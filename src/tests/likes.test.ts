@@ -1,6 +1,6 @@
 import request from "supertest";
 import app from "../app";
-import database from "../src/database/client";
+import database from "../database/client";
 
 // Helper function to get a valid auth token
 const getAuthToken = async () => {

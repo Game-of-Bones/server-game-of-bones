@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/app.ts",
-    "test": "jest",
+    "test": "jest --detectOpenHandles",
     "start": "node src/app.ts",
     "init:db": "ts-node src/database/init.ts",
     "init:test": "ts-node src/database/initTest.ts"

@@ -44,8 +44,13 @@ const toggleLike = async (req: Request, res: Response, next: NextFunction) => {
       res.status(201).json({ insertId: result, message: "Like added successfully" });
     }
   } catch (err) {
-    // Handle errors, such as a non-existent post_id, which would violate the FK
-    if (err.code === "ER_NO_REFERENCED_ROW_2") {
+    // Check if the error is a MySQL error for a non-existent foreign key
+    if (
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      err.code === "ER_NO_REFERENCED_ROW_2"
+    ) {
       res.status(404).send("Post not found");
     } else {
       next(err);
