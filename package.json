@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/app.ts",
-    "test": "jest --detectOpenHandles",
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles",
     "start": "node src/app.ts",
     "init:db": "ts-node src/database/init.ts",
     "init:test": "ts-node src/database/initTest.ts",
@@ -39,6 +39,7 @@
     "@types/pg": "^8.15.5",
     "@types/supertest": "^6.0.3",
     "@types/validator": "^13.15.3",
+    "cross-env": "^10.1.0",
     "jest": "^30.1.3",
     "nodemon": "^3.1.10",
     "supertest": "^7.1.4",

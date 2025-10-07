@@ -2,6 +2,7 @@ import { Pool } from 'mysql2/promise';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { Comment, CommentWithUser, CreateCommentDTO } from '../../models/Comment';
 
+
 export class CommentsRepository {
   constructor(private pool: Pool) {}
 
