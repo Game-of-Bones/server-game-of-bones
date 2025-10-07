@@ -1,28 +1,26 @@
 import request from "supertest";
 import app from "../app";
 import database from "../database/client";
-import { exec } from "child_process";
-
-// Helper function to get a valid auth token
-const getAuthToken = async () => {
-  // Using a known test user from schema.test.sql
-  const response = await request(app)
-    .post("/api/users/login")
-    .send({
-      email: "testuser@example.com",
-      password: "password123",
-    });
-  return response.body.token;
-};
+import { exec as execCallback } from "child_process";
+import { promisify } from "util";
+const exec = promisify(execCallback);
 
 describe("Likes API", () => {
-  let token: string;
+  // Since our verifyToken middleware is a placeholder that always authenticates
+  // as user 1, we can use a simple, non-empty string as our "token".
+  // This removes the dependency on a login endpoint.
+  const token = "fake-test-token";
 
-  // Before each test, reset the database and get a token
+  // Before each test, reset the database.
   beforeEach(async () => {
     // Reset the test database before each test
-    await new Promise((resolve) => exec("npm run test:reset", resolve));
-    token = await getAuthToken();
+    try {
+      await exec("npm run test:reset");
+    } catch (err) {
+      console.error("Failed to reset test database:", err);
+      // If the DB reset fails, we should stop the tests.
+      throw err;
+    }
   });
 
   // After all tests, close the database connection
@@ -32,7 +30,7 @@ describe("Likes API", () => {
 
   describe("GET /api/posts/:postId/likes", () => {
     it("should return the correct like count for a post", async () => {
-      // Post with ID 1 has 2 likes in the test data
+      // Post with ID 1 has 2 likes in the initial test data
       const response = await request(app).get("/api/posts/1/likes");
 
       expect(response.status).toBe(200);
