@@ -1,8 +1,9 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { testConnection } from './config/database';
-import authRoutes from "./routes/auth.routes";
-import swaggerDocs from "./config/swagger";
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
 // Load environment variables
 dotenv.config();
 
@@ -32,6 +33,9 @@ const startServer = async () => {
     process.exit(1); // Exit if database connection fails
   }
 };
+const swaggerDocument = YAML.load(path.join(__dirname, '../docs/swagger.yaml'));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Execute the start function
 startServer();
