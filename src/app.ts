@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { testConnection } from './config/database';
+import authRoutes from './routes/auth.routes';
 
 // Load environment variables
 dotenv.config();
@@ -16,15 +17,19 @@ app.get('/', (req, res) => {
   res.json({ message: 'Game of Bones API 🦴' });
 });
 
+// API Routes
+app.use('/api/auth', authRoutes);
+
 // Function to start the server
 const startServer = async () => {
   try {
     // Test database connection before starting server
     await testConnection();
-    
+
     // If DB connection successful, start the server
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📡 API: http://localhost:${PORT}/api/auth`);
     });
   } catch (error) {
     console.error('💥 Error starting server:', error);
