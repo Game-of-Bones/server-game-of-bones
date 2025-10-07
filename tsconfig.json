@@ -1,4 +1,4 @@
-//Commented out by MariCarmen on 30 Sept 2025. To set up database sql. 
+//Commented out by MariCarmen on 30 Sept 2025. To set up database sql.
 /*
 {
   // Visit https://aka.ms/tsconfig to read more about this file
@@ -58,9 +58,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "app.ts"],
   "exclude": ["node_modules", "dist"]
 }

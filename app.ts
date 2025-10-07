@@ -1,8 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import pool, { testConnection } from './config/database';
+import pool, { testConnection } from './src/config/database';
 // Importamos el router de comentarios
-import { createCommentsRouter } from '../src/routes/comments';
+import { createCommentsRouter } from './src/routes/comment.routes';
 // import authRouter from './routes/auth.routes'; // Para el futuro
 
 // Load environment variables
@@ -18,7 +18,7 @@ app.use(express.json());
 // usamos el pool importado directamente
 app.use('/gameofbones', createCommentsRouter(pool));
 // Si tuvieras el router de auth (de tu compañera) se montaría así:
-// app.use('/gameofbones/auth', authRouter); 
+// app.use('/gameofbones/auth', authRouter);
 
 
 // Health check route

@@ -1,13 +1,13 @@
 /**
  * MODELO DE COMENTARIOS
- * 
+ *
  * Este archivo define únicamente las INTERFACES y TIPOS de datos
- * para los comentarios 
+ * para los comentarios
  */
 
 /**
  * Interfaz principal del comentario
- * Representa un comentario en un post 
+ * Representa un comentario en un post
  */
 export interface Comment {
     id: bigint;                    // ID único del comentario
@@ -16,7 +16,7 @@ export interface Comment {
     content: string;               // Contenido del comentario (max 1000 caracteres)
     created_at: Date;              // Fecha y hora de creación
   }
-  
+
   /**
    * Interfaz extendida que incluye información del usuario
    * Se usa cuando necesitamos mostrar quién escribió el comentario
@@ -26,7 +26,7 @@ export interface Comment {
     username: string;              // Nombre de usuario del autor
     user_email: string;            // Email del autor (para avatar o contacto)
   }
-  
+
   /**
    * DTO (Data Transfer Object) para CREAR comentarios
    * Define exactamente qué datos se necesitan del cliente
@@ -37,7 +37,7 @@ export interface Comment {
     user_id: bigint;               // Quién comenta (viene del token JWT)
     content: string;               // El texto del comentario
   }
-  
+
   /**
    * DTO para ACTUALIZAR comentarios
    * Solo se permite modificar el contenido del comentario
@@ -46,7 +46,7 @@ export interface Comment {
   export interface UpdateCommentDTO {
     content: string;               // Nuevo contenido del comentario
   }
-  
+
   /**
    * Tipo para respuestas exitosas de la API
    */
@@ -55,13 +55,13 @@ export interface Comment {
     data: CommentWithUser;
     message?: string;
   }
-  
+
   /**
    * Tipo para respuestas con múltiples comentarios
    */
   export interface CommentsListResponse {
     success: boolean;
-    data: {
+    data: 
       comments: CommentWithUser[];
       pagination: {
         total: number;
