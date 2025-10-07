@@ -21,3 +21,17 @@ declare global {
 
 // Esta línea es CRÍTICA - hace que el archivo sea un módulo
 export {};
+
+/*Código MariCarmen- probablemente se actualizará/borrará
+// This file extends the Express Request interface to include the 'auth' property.
+
+declare global {
+  namespace Express {
+    interface Request {
+      auth: { id: number };
+    }
+  }
+}
+
+export {};
+*/
