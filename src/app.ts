@@ -24,7 +24,7 @@ app.use(likesRoutes);
 
 
 // Health check route
-app.get('/', (req, res) => {
+app.get('/gameofbones', (req, res) => {
   res.json({ message: 'Game of Bones API 🦴' });
 });
 
