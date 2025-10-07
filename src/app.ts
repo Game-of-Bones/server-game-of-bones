@@ -16,17 +16,19 @@ const PORT = process.env.PORT || 3000;
 // Middleware to parse JSON
 app.use(express.json());
 
-// usamos el pool importado directamente
-app.use('/gameofbones', createCommentsRouter(pool));
-app.use(likesRoutes);
-// Si tuvieras el router de auth (de tu compañera) se montaría así:
-// app.use('/gameofbones/auth', authRouter); 
-
-
 // Health check route
 app.get('/gameofbones', (req, res) => {
   res.json({ message: 'Game of Bones API 🦴' });
 });
+
+// usamos el pool importado directamente
+app.use('/gameofbones', createCommentsRouter(pool));
+app.use('/gameofbones', likesRoutes);
+// Si tuvieras el router de auth (de tu compañera) se montaría así:
+// app.use('/gameofbones/auth', authRouter); 
+
+
+
 
 // Function to start the server
 const startServer = async () => {

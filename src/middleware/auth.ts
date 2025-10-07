@@ -1,16 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+
 /**
  * Middleware para verificar que el usuario está autenticado
  * Verifica el token JWT y añade la info del usuario al request
  */
 export const verifyToken = (
-  req: Request, 
-  res: Response, 
+  req: Request,
+  res: Response,
   next: NextFunction
 ) => {
   try {
+    //console.log('🔍 NODE_ENV:', process.env.NODE_ENV); // <-- Añade esto
+    //console.log('🔍 Token recibido:', req.headers.authorization); // <-- Y esto
+
     const token = req.headers.authorization?.replace('Bearer ', '');
 
     if (!token) {
@@ -21,14 +25,15 @@ export const verifyToken = (
     }
 
     // En entorno de testing, aceptar cualquier token y autenticar como usuario 1
-    if (process.env.NODE_ENV === 'test') {
-      req.user = { id: 1, role: 'user'};
+    if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
+      //console.log('✅ Modo desarrollo - autenticando como usuario 1');
+      req.user = { id: 1, role: 'user' };
       return next();
     }
 
     // Verificar token JWT en producción/desarrollo
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    
+
     // Añadir info del usuario al request
     req.user = {
       id: decoded.id,
