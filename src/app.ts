@@ -1,7 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { testConnection } from './config/database';
-
+import authRoutes from "./routes/auth.routes";
+import swaggerDocs from "./config/swagger";
 // Load environment variables
 dotenv.config();
 
