@@ -1,48 +1,72 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import pool, { testConnection } from './src/config/database';
-// Importamos el router de comentarios
-import { createCommentsRouter } from './src/routes/comment.routes';
-// import authRouter from './routes/auth.routes'; // Para el futuro
+// src/app.ts
+import express, { Application, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import routes from './routes';
 
-// Load environment variables
-dotenv.config();
+// Crear aplicación Express
+const app: Application = express();
 
-const app = express();
-// Nota: La variable PORT es 3000
-const PORT = process.env.PORT || 3000;
+// ==================== MIDDLEWARES GLOBALES ====================
 
-// Middleware to parse JSON
+// Seguridad básica con Helmet
+app.use(helmet());
+
+// CORS - permitir peticiones desde el frontend
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173', // URL de tu React
+  credentials: true
+}));
+
+// Parsear JSON en el body de las peticiones
 app.use(express.json());
 
-// usamos el pool importado directamente
-app.use('/gameofbones', createCommentsRouter(pool));
-// Si tuvieras el router de auth (de tu compañera) se montaría así:
-// app.use('/gameofbones/auth', authRouter);
+// Parsear URL-encoded data
+app.use(express.urlencoded({ extended: true }));
 
+// Logger de peticiones HTTP (solo en desarrollo)
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
-// Health check route
-app.get('/', (req, res) => {
-  res.json({ message: 'Game of Bones API 🦴' });
+// ==================== RUTAS ====================
+
+// Ruta de health check
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
-// Function to start the server
-const startServer = async () => {
-  try {
-    // Test database connection before starting server
-    await testConnection();
+// Rutas principales de la API
+app.use('/api', routes);
 
-    // If DB connection successful, start the server
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT} (API Base: http://localhost:${PORT}/gameofbones)`);
-    });
-  } catch (error) {
-    console.error('💥 Error starting server:', error);
-    process.exit(1); // Exit if database connection fails
-  }
-};
+// Ruta 404 - No encontrada
+app.use('*', (req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    message: `Ruta ${req.originalUrl} no encontrada`
+  });
+});
 
-// Execute the start function
-startServer();
+// ==================== MANEJO DE ERRORES ====================
 
+// Error handler global
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('❌ Error:', err);
+
+  res.status(500).json({
+    success: false,
+    message: process.env.NODE_ENV === 'development'
+      ? err.message
+      : 'Error interno del servidor',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// Exportar app (NO iniciar el servidor aquí)
 export default app;
