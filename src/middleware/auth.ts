@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
  * Middleware para verificar que el usuario está autenticado
  * Verifica el token JWT y añade la info del usuario al request
  */
-export const authenticate = (
+export const verifyToken = (
   req: Request, 
   res: Response, 
   next: NextFunction
@@ -38,14 +38,6 @@ export const authenticate = (
   }
 }
 /*Código MaricCarmen- probablemente se borrará  
-import { Request, Response, NextFunction } from "express";
-
-
-//----------IMPORTANT-------------------
-//TEMPORAL CODE FOR TESTING PURPOSE!!!!!
-
-// Placeholder for the real verifyToken middleware.
-// This will be replaced with actual JWT verification logic.
 export const verifyToken = (
   req: Request,
   res: Response,

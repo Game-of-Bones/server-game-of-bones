@@ -31,7 +31,12 @@ const toggleLike = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const postId = parseInt(req.params.postId, 10);
     // We assume the user ID comes from the authentication middleware
-    const userId = req.auth.id;
+    const userId = req.user?.id;
+
+    // Validate that the user is authenticated
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
 
     // Check if the like already exists
     const existingLike = await likeManager.findUserLikeForPost(userId, postId);

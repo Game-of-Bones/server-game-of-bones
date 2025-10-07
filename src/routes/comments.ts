@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CommentsController } from '../controllers/commentsController';
-import { authenticate } from '../middleware/auth';
+import { verifyToken } from '../middleware/auth';
 import { validateCreateComment, validateUpdateComment } from '../middleware/commentValidation';
 import { Pool } from 'mysql2/promise';
 
@@ -15,7 +15,7 @@ export function createCommentsRouter(pool: Pool): Router {
   // Crear comentario (requiere autenticación + validación)
   router.post(
     '/posts/:postId/comments',
-    authenticate,
+    verifyToken,
     validateCreateComment,
     controller.createComment
   );
@@ -26,7 +26,7 @@ export function createCommentsRouter(pool: Pool): Router {
   // Actualizar comentario (requiere autenticación + validación)
   router.put(
     '/comments/:id',
-    authenticate,
+    verifyToken,
     validateUpdateComment,
     controller.updateComment
   );
@@ -34,7 +34,7 @@ export function createCommentsRouter(pool: Pool): Router {
   // Eliminar comentario (requiere autenticación)
   router.delete(
     '/comments/:id',
-    authenticate,
+    verifyToken,
     controller.deleteComment
   );
 
