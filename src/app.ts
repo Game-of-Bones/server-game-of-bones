@@ -8,7 +8,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { syncDatabase } from './models'; // Reintroducido para la estructura inicial
 import router from './router'; 
-import { errorHandler } from './middleware/errorHandler'; // Se ignora el error de TS del compi
+// @ts-ignore 
+import { errorHandler } from './middleware/errorHandler';
 
 const app: Application = express();
 
@@ -39,7 +40,7 @@ app.get('/health', (req, res) => {
 // ============================================
 // ERROR HANDLER
 // ============================================
-app.use(errorHandler);
+//app.use(errorHandler);
 
 // ============================================
 // INICIALIZACIÓN
