@@ -1,11 +1,18 @@
 import express from 'express';
 import dotenv from 'dotenv';
+<<<<<<< HEAD
 import pool, { testConnection } from './config/database';
 // Importamos el router de comentarios
 import { createCommentsRouter } from '../src/routes/comments';
 import likesRoutes from '../src/routes/likes';
 // import authRouter from './routes/auth.routes'; // Para el futuro
 
+=======
+import { testConnection } from './config/database';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
+>>>>>>> 403299b0eff80405ab06c85f01073d16b379e6fb
 // Load environment variables
 dotenv.config();
 
@@ -45,6 +52,9 @@ const startServer = async () => {
     process.exit(1); // Exit if database connection fails
   }
 };
+const swaggerDocument = YAML.load(path.join(__dirname, '../docs/swagger.yaml'));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Execute the start function
 startServer();
