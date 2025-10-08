@@ -3,7 +3,7 @@
  */
 
 import sequelize from '../config/database';
-import Comment from './Comment';
+import comment from './comment';
 
 // NOTA: Estas importaciones darán error temporal hasta que tus compis
 // desarrollen sus modelos. Es NORMAL y esperado.
@@ -117,7 +117,7 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
 
 export {
     sequelize,
-    Comment,
+    comment,
     // Elimina setupAssociations y syncDatabase de este bloque,
     // ya que se exportan como 'export const'.
     // User,
