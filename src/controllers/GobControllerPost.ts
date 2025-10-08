@@ -1,7 +1,24 @@
-import Fossil from "../models/GobModelPost.js";
+import { Request, Response } from "express";
+import Fossil, { FossilType, Status } from "../models/GobModelPost";
 
-// POST
-export const createFossil = async (req, res) => {
+interface FossilRequestBody {
+  title: string;
+  summary: string;
+  image_url?: string;
+  discovery_date?: string;
+  location?: string;
+  palaeontologist?: string;
+  fossil_type?: FossilType;
+  geological_period?: string;
+  author_id: number;
+  status?: Status;
+  source?: string;
+}
+
+export const createFossil = async (
+  req: Request<{}, {}, FossilRequestBody>,
+  res: Response
+): Promise<void> => {
   try {
     const {
       title,
@@ -21,7 +38,7 @@ export const createFossil = async (req, res) => {
       title,
       summary,
       image_url,
-      discovery_date,
+      discovery_date: discovery_date ? new Date(discovery_date) : undefined,
       location,
       palaeontologist,
       fossil_type,
@@ -29,8 +46,6 @@ export const createFossil = async (req, res) => {
       author_id,
       status,
       source,
-      created_at: new Date(),
-      updated_at: new Date(),
     });
 
     res.status(201).json({
@@ -42,4 +57,3 @@ export const createFossil = async (req, res) => {
     res.status(500).json({ error: "Error al crear el fósil" });
   }
 };
-
