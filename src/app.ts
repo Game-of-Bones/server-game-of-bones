@@ -18,7 +18,6 @@ import path from 'path';
 dotenv.config();
 =======
 /**
- * APP.TS - Inicialización de Express con Sequelize
  * * Configuración principal de la aplicación
  */
 
