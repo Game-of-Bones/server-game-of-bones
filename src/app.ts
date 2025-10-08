@@ -1,4 +1,3 @@
-// src/app.ts
 /**
  * Configuración principal de la aplicación
  */
@@ -21,9 +20,6 @@ app.use(express.urlencoded({ extended: true }));
 // ============================================
 // RUTAS
 // ============================================
-// Ruta base cambiada a /gameofbones
-app.use('/gameofbones', router);
-
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -33,8 +29,30 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Ruta raíz de la API - muestra información de bienvenida
+app.get('/gameofbones', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Game of Bones API',
+    version: '1.0.0',
+    description: 'API REST para Blog de Paleontología',
+    endpoints: {
+      health: '/health',
+      users: '/gameofbones/users',
+      posts: '/gameofbones/posts',
+      comments: '/gameofbones/comments',
+      tags: '/gameofbones/tags',
+      categories: '/gameofbones/categories'
+    },
+    documentation: 'https://github.com/Game-of-Bones/server-game-of-bones'
+  });
+});
+
+// Todas las rutas de la API
+app.use('/gameofbones', router);
+
 // ============================================
-// MANEJO DE ERRORES (comentado hasta que tengas el middleware)
+// MANEJO DE ERRORES
 // ============================================
 // Middleware de manejo de errores - debe ir al final
 // app.use(errorHandler);
@@ -43,7 +61,14 @@ app.get('/health', (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Ruta no encontrada'
+    message: 'Ruta no encontrada',
+    availableEndpoints: {
+      health: '/health',
+      api: '/gameofbones',
+      users: '/gameofbones/users',
+      posts: '/gameofbones/posts',
+      comments: '/gameofbones/comments'
+    }
   });
 });
 
