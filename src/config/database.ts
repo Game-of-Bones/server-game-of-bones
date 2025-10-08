@@ -1,33 +1,43 @@
-import mysql from 'mysql2/promise';
+/**
+ * CONFIGURACIÓN DE SEQUELIZE
+ * 
+ * Configura la conexión a la base de datos MySQL
+ * usando variables de entorno
+ */
+
+import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create connection pool
-const pool = mysql.createPool({
+const sequelize = new Sequelize({
+  database: process.env.DB_NAME || 'game_of_bones_app',
+  username: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'game_of_bones_app',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  dialect: 'mysql',
+  
+  // Configuración de pool de conexiones
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  },
+  
+  // Logging (desactiva en producción)
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  
+  // Timezone
+  timezone: '+00:00',
+  
+  // Define opciones por defecto para todos los modelos
+  define: {
+    timestamps: true,
+    underscored: true,
+    freezeTableName: true
+  }
 });
 
-// Function to test the connection
-export const testConnection = async (): Promise<void> => {
-  try {
-    const connection = await pool.getConnection();
-    console.log('✅ MySQL connection successful');
-    connection.release();
-  } catch (error) {
-    console.error('❌ Error connecting to MySQL:', error);
-    throw error;
-  }
-};
-
-// Export pool to use in other files
-export default pool;
+export default sequelize;

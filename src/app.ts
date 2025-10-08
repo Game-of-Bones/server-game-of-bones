@@ -1,52 +1,73 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import pool, { testConnection } from './config/database';
-// Importamos el router de comentarios
-import { createCommentsRouter } from '../src/routes/comments';
-import likesRoutes from '../src/routes/likes';
-// import authRouter from './routes/auth.routes'; // Para el futuro
+/**
+ * APP.TS - Inicialización de Express con Sequelize
+ * 
+ * Configuración principal de la aplicación
+ */
 
-// Load environment variables
-dotenv.config();
+import express, { Application } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { syncDatabase } from './models';
+import router from './router';
+import { errorHandler } from './middleware/errorHandler';
 
-const app = express();
-// Nota: La variable PORT es 3000
-const PORT = process.env.PORT || 3000;
+const app: Application = express();
 
-// Middleware to parse JSON
+// ============================================
+// MIDDLEWARES
+// ============================================
+app.use(helmet());
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Health check route
-app.get('/gameofbones', (req, res) => {
-  res.json({ message: 'Game of Bones API 🦴' });
+// ============================================
+// RUTAS
+// ============================================
+app.use('/api', router);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    message: 'Game of Bones API is running'
+  });
 });
 
-// usamos el pool importado directamente
-app.use('/gameofbones', createCommentsRouter(pool));
-app.use('/gameofbones', likesRoutes);
-// Si tuvieras el router de auth (de tu compañera) se montaría así:
-// app.use('/gameofbones/auth', authRouter); 
+// ============================================
+// ERROR HANDLER
+// ============================================
+app.use(errorHandler);
 
+// ============================================
+// INICIALIZACIÓN
+// ============================================
+const PORT = process.env.PORT || 3000;
 
-
-
-// Function to start the server
 const startServer = async () => {
   try {
-    // Test database connection before starting server
-    await testConnection();
-
-    // If DB connection successful, start the server
+    // Sincronizar base de datos (sin eliminar datos existentes)
+    await syncDatabase(false);
+    
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT} (API Base: http://localhost:${PORT}/gameofbones)`);
+      console.log(`
+╔═══════════════════════════════════════════════╗
+║                                               ║
+║         🦴 GAME OF BONES API 🦴              ║
+║                                               ║
+║  Server running on http://localhost:${PORT}   ║
+║                                               ║
+╚═══════════════════════════════════════════════╝
+      `);
     });
   } catch (error) {
-    console.error('💥 Error starting server:', error);
-    process.exit(1); // Exit if database connection fails
+    console.error('❌ Error al iniciar el servidor:', error);
+    process.exit(1);
   }
 };
 
-// Execute the start function
+// Iniciar servidor
 startServer();
 
 export default app;

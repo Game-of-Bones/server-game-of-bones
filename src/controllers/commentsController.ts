@@ -1,245 +1,213 @@
 /**
- * CONTROLADOR DE COMENTARIOS
+ * CONTROLADOR DE COMENTARIOS CON SEQUELIZE
  * 
- * El controller es el cerebro de la operación.
- * Coordina entre el request HTTP, el repository (base de datos),
- * y la respuesta que se envía al cliente.
- * 
- * Responsabilidades:
- * Recibir y procesar requests HTTP
- * Validar permisos (¿es el autor? ¿es admin?)
- * Llamar al repository para operaciones de BD
- * Construir y enviar respuestas HTTP apropiadas
- * Manejar errores y casos edge 
+ * Ahora usa directamente los modelos de Sequelize
+ * sin necesidad de repositories
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { CommentsRepository } from '../database/repositories/commentsRepository';
-import { CreateCommentDTO } from '../models/Comment';
-import { Pool } from 'mysql2/promise';
+// src/controllers/commentsController.ts
+import { Request, Response } from 'express';
+import Comment from '../models/Comment';
+import Post from '../models/Post';
+import User from '../models/User';
 
-
-export class CommentsController {
-  private repository: CommentsRepository;
-
-  constructor(pool: Pool) {
-    this.repository = new CommentsRepository(pool);
-  }
-
-  /**
-   * GET /api/posts/:postId/comments
-   */
-  getCommentsByPost = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const postId = BigInt(req.params.postId);
-      const limit = parseInt(req.query.limit as string) || 50;
-      const offset = parseInt(req.query.offset as string) || 0;
-
-      const postExists = await this.repository.postExists(postId);
-      if (!postExists) {
-        return res.status(404).json({
-          success: false,
-          error: 'Post no encontrado'
-        });
-      }
-
-      const comments = await this.repository.findByPostId(postId, limit, offset);
-      const total = await this.repository.countByPostId(postId);
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          comments,
-          pagination: {
-            total,
-            limit,
-            offset,
-            hasMore: offset + limit < total
-          }
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
+// Interfaz para comentario con tipado
+interface CommentWithRelations {
+  id: bigint;
+  content: string;
+  user_id: bigint;
+  post_id: bigint;
+  parent_id: bigint | null;
+  created_at: Date;
+  updated_at: Date;
+  user?: {
+    id: bigint;
+    username: string;
   };
-
-  /**
-   * GET /api/comments/:id
-   */
-  getCommentById = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const commentId = BigInt(req.params.id);
-      const comment = await this.repository.findByIdWithUser(commentId);
-  
-      if (!comment) {
-        return res.status(404).json({
-          success: false,
-          error: 'Comentario no encontrado'
-        });
-      }
-  
-      return res.status(200).json({
-        success: true,
-        data: comment
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * GET /api/users/:userId/comments
-   */
-  getCommentsByUser = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const userId = BigInt(req.params.userId);
-      const limit = parseInt(req.query.limit as string) || 50;
-      const offset = parseInt(req.query.offset as string) || 0;
-
-      const comments = await this.repository.findByUserId(userId, limit, offset);
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          comments,
-          pagination: {
-            limit,
-            offset
-          }
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * POST /api/posts/:postId/comments   
-   */
-  createComment = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const postId = BigInt(req.params.postId);
-      const userId = req.user?.id;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'Usuario no autenticado'
-        });
-      }
-
-      const postExists = await this.repository.postExists(postId);
-      if (!postExists) {
-        return res.status(404).json({
-          success: false,
-          error: 'Post no encontrado'
-        });
-      }
-
-      const commentData: CreateCommentDTO = {
-        post_id: postId,
-        user_id: BigInt(userId),
-        content: req.body.content
-      };
-
-      const newComment = await this.repository.create(commentData);
-      const commentWithUser = await this.repository.findByIdWithUser(newComment.id);
-
-      return res.status(201).json({
-        success: true,
-        data: commentWithUser,
-        message: 'Comentario creado exitosamente'
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * PUT /api/comments/:id   
-   */
-  updateComment = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const commentId = BigInt(req.params.id);
-      const userId = req.user?.id;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'Usuario no autenticado'
-        });
-      }
-
-      const comment = await this.repository.findById(commentId);
-      if (!comment) {
-        return res.status(404).json({
-          success: false,
-          error: 'Comentario no encontrado'
-        });
-      }
-
-      const isAuthor = await this.repository.isAuthor(commentId, BigInt(userId));
-      if (!isAuthor) {
-        return res.status(403).json({
-          success: false,
-          error: 'No tienes permiso para editar este comentario'
-        });
-      }
-
-      const updatedComment = await this.repository.update(commentId, req.body.content);
-
-      return res.status(200).json({
-        success: true,
-        data: updatedComment,
-        message: 'Comentario actualizado exitosamente'
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * DELETE /api/comments/:id   
-   */
-  deleteComment = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const commentId = BigInt(req.params.id);
-      const userId = req.user?.id;
-      const userRole = req.user?.role;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'Usuario no autenticado'
-        });
-      }
-
-      const comment = await this.repository.findById(commentId);
-      if (!comment) {
-        return res.status(404).json({
-          success: false,
-          error: 'Comentario no encontrado'
-        });
-      }
-
-      const isAuthor = await this.repository.isAuthor(commentId, BigInt(userId));
-      const isAdmin = userRole === 'admin' || userRole === 'moderator';
-
-      if (!isAuthor && !isAdmin) {
-        return res.status(403).json({
-          success: false,
-          error: 'No tienes permiso para eliminar este comentario'
-        });
-      }
-
-      await this.repository.delete(commentId);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Comentario eliminado exitosamente'
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
+  replies?: CommentWithRelations[];
 }
+
+// Crear un comentario
+export const createComment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { post_id, user_id, content, parent_id } = req.body;
+
+    // Verificar que el post existe
+    const post = await Post.findByPk(post_id);
+    if (!post) {
+      res.status(404).json({ message: 'Post no encontrado' });
+      return;
+    }
+
+    // Verificar que el usuario existe
+    const user = await User.findByPk(user_id);
+    if (!user) {
+      res.status(404).json({ message: 'Usuario no encontrado' });
+      return;
+    }
+
+    // Si es una respuesta, verificar que el comentario padre existe
+    if (parent_id) {
+      const parentComment = await Comment.findByPk(parent_id);
+      if (!parentComment) {
+        res.status(404).json({ message: 'Comentario padre no encontrado' });
+        return;
+      }
+    }
+
+    const comment = await Comment.create({
+      post_id: BigInt(post_id),
+      user_id: BigInt(user_id),
+      content,
+      parent_id: parent_id ? BigInt(parent_id) : null,
+    });
+
+    res.status(201).json(comment);
+  } catch (error) {
+    console.error('Error al crear comentario:', error);
+    res.status(500).json({ message: 'Error al crear el comentario' });
+  }
+};
+
+// Obtener comentarios de un post
+export const getCommentsByPost = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { post_id } = req.params;
+
+    const comments = await Comment.findAll({
+      where: { 
+        post_id: BigInt(post_id),
+        parent_id: null // Solo comentarios principales
+      },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username'],
+        },
+        {
+          model: Comment,
+          as: 'replies',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'username'],
+            },
+          ],
+        },
+      ],
+      order: [['created_at', 'DESC']],
+    });
+
+    // Convertir BigInt a string para serialización JSON
+    const serializedComments = comments.map((c: any) => ({
+      ...c.toJSON(),
+      id: c.id.toString(),
+      post_id: c.post_id.toString(),
+      user_id: c.user_id.toString(),
+      parent_id: c.parent_id ? c.parent_id.toString() : null,
+      replies: c.replies?.map((r: any) => ({
+        ...r.toJSON(),
+        id: r.id.toString(),
+        post_id: r.post_id.toString(),
+        user_id: r.user_id.toString(),
+        parent_id: r.parent_id ? r.parent_id.toString() : null,
+      })),
+    }));
+
+    res.json(serializedComments);
+  } catch (error) {
+    console.error('Error al obtener comentarios:', error);
+    res.status(500).json({ message: 'Error al obtener los comentarios' });
+  }
+};
+
+// Obtener un comentario por ID
+export const getCommentById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const comment = await Comment.findByPk(BigInt(id), {
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username'],
+        },
+        {
+          model: Comment,
+          as: 'replies',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'username'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!comment) {
+      res.status(404).json({ message: 'Comentario no encontrado' });
+      return;
+    }
+
+    const serializedComment = {
+      ...comment.toJSON(),
+      id: comment.id.toString(),
+      post_id: comment.post_id.toString(),
+      user_id: comment.user_id.toString(),
+      parent_id: comment.parent_id ? comment.parent_id.toString() : null,
+    };
+
+    res.json(serializedComment);
+  } catch (error) {
+    console.error('Error al obtener comentario:', error);
+    res.status(500).json({ message: 'Error al obtener el comentario' });
+  }
+};
+
+// Actualizar un comentario
+export const updateComment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+
+    const comment = await Comment.findByPk(BigInt(id));
+
+    if (!comment) {
+      res.status(404).json({ message: 'Comentario no encontrado' });
+      return;
+    }
+
+    await comment.update({ content });
+
+    res.json(comment);
+  } catch (error) {
+    console.error('Error al actualizar comentario:', error);
+    res.status(500).json({ message: 'Error al actualizar el comentario' });
+  }
+};
+
+// Eliminar un comentario
+export const deleteComment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const comment = await Comment.findByPk(BigInt(id));
+
+    if (!comment) {
+      res.status(404).json({ message: 'Comentario no encontrado' });
+      return;
+    }
+
+    await comment.destroy();
+
+    res.json({ message: 'Comentario eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar comentario:', error);
+    res.status(500).json({ message: 'Error al eliminar el comentario' });
+  }
+};
