@@ -40,4 +40,14 @@ const sequelize = new Sequelize({
   }
 });
 
+export const testConnection = async (): Promise<boolean> => {
+  try {
+      await sequelize.authenticate();
+      return true;
+  } catch (error) {
+      return false;
+  }
+};
+
 export default sequelize;
+// O export { sequelize, testConnection };
