@@ -1,9 +1,8 @@
-// src/controllers/authController.ts
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import pool from '../config/database';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import sequelize from '../config/database';
+import { QueryTypes } from 'sequelize'; 
 import { CreateUserDTO, LoginDTO } from '../models/User';
 
 /**
@@ -43,9 +42,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Verificar si el email ya existe
-    const [existingUsers] = await pool.execute<RowDataPacket[]>(
+    const existingUsers = await sequelize.query(
       'SELECT id FROM users WHERE email = ?',
-      [email]
+      {
+        replacements: [email],
+        type: QueryTypes.SELECT
+      }
     );
 
     if (existingUsers.length > 0) {
@@ -57,9 +59,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Verificar si el username ya existe
-    const [existingUsernames] = await pool.execute<RowDataPacket[]>(
+    const existingUsernames = await sequelize.query(
       'SELECT id FROM users WHERE username = ?',
-      [username]
+      {
+        replacements: [username],
+        type: QueryTypes.SELECT
+      }
     );
 
     if (existingUsernames.length > 0) {
@@ -74,18 +79,23 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Crear usuario
-    const [result] = await pool.execute<ResultSetHeader>(
+    await sequelize.query(
       'INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)',
-      [username, email, hashedPassword, 'user']
+      {
+        replacements: [username, email, hashedPassword, 'user']
+      }
     );
 
     // Obtener usuario creado
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      'SELECT id, username, email, role, created_at FROM users WHERE id = ?',
-      [result.insertId]
-    );
+    const users = await sequelize.query(
+      'SELECT id, username, email, role, created_at FROM users WHERE email = ?',
+      {
+        replacements: [email],
+        type: QueryTypes.SELECT
+      }
+    ) as any[];
 
-    const user = rows[0];
+    const user = users[0];
 
     // Generar token JWT
     const token = jwt.sign(
@@ -136,12 +146,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Buscar usuario
-    const [rows] = await pool.execute<RowDataPacket[]>(
+    const users = await sequelize.query(
       'SELECT * FROM users WHERE email = ? AND deleted_at IS NULL',
-      [email]
-    );
+      {
+        replacements: [email],
+        type: QueryTypes.SELECT
+      }
+    ) as any[];
 
-    if (rows.length === 0) {
+    if (users.length === 0) {
       res.status(401).json({
         success: false,
         message: 'Credenciales inválidas'
@@ -149,7 +162,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = rows[0];
+    const user = users[0];
 
     // Verificar contraseña
     const validPassword = await bcrypt.compare(password, user.password_hash);

@@ -10,23 +10,45 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Detectar si estamos en modo test
+const isTest = process.env.NODE_ENV === 'test';
+
+// Configuración según el entorno
+const config = {
+  database: isTest 
+    ? (process.env.DB_TEST_NAME || 'game_of_bones_app_test')
+    : (process.env.DB_NAME || 'game_of_bones_app'),
+  username: isTest
+    ? (process.env.DB_TEST_USER || process.env.DB_USER || 'root')
+    : (process.env.DB_USER || 'root'),
+  password: isTest
+    ? (process.env.DB_TEST_PASSWORD || process.env.DB_PASSWORD || '')
+    : (process.env.DB_PASSWORD || ''),
+  host: isTest
+    ? (process.env.DB_TEST_HOST || process.env.DB_HOST || 'localhost')
+    : (process.env.DB_HOST || 'localhost'),
+  port: isTest
+    ? parseInt(process.env.DB_TEST_PORT || process.env.DB_PORT || '3306')
+    : parseInt(process.env.DB_PORT || '3306'),
+};
+
 const sequelize = new Sequelize({
-  database: process.env.DB_NAME || 'game_of_bones_app',
-  username: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
+  database: config.database,
+  username: config.username,
+  password: config.password,
+  host: config.host,
+  port: config.port,
   dialect: 'mysql',
   
   // Configuración de pool de conexiones
   pool: {
-    max: 5,
+    max: isTest ? 5 : 10,
     min: 0,
     acquire: 30000,
     idle: 10000
   },
   
-  // Logging (desactiva en producción)
+  // Logging (desactiva en test y producción)
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   
   // Timezone
@@ -42,12 +64,13 @@ const sequelize = new Sequelize({
 
 export const testConnection = async (): Promise<boolean> => {
   try {
-      await sequelize.authenticate();
-      return true;
+    await sequelize.authenticate();
+    console.log(`✅ Conexión exitosa a: ${config.database}`);
+    return true;
   } catch (error) {
-      return false;
+    console.error('❌ Error de conexión:', error);
+    return false;
   }
 };
 
 export default sequelize;
-// O export { sequelize, testConnection };

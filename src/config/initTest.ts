@@ -1,4 +1,3 @@
-// src/database/initTest.ts
 import { config } from 'dotenv';
 import { Sequelize } from 'sequelize';
 
@@ -7,10 +6,10 @@ config();
 
 const initTestDatabase = async () => {
   const rootConnection = new Sequelize({
-    host: process.env.TEST_DB_HOST || process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.TEST_DB_PORT || process.env.DB_PORT || '3306'),
-    username: process.env.TEST_DB_USER || process.env.DB_USER || 'root',
-    password: process.env.TEST_DB_PASSWORD || process.env.DB_PASSWORD || '',
+    host: process.env.DB_TEST_HOST || process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_TEST_PORT || process.env.DB_PORT || '3306'),
+    username: process.env.DB_TEST_USER || process.env.DB_USER || 'root',
+    password: process.env.DB_TEST_PASSWORD || process.env.DB_PASSWORD || '',
     dialect: 'mysql',
     logging: false,
   });
@@ -20,7 +19,8 @@ const initTestDatabase = async () => {
     await rootConnection.authenticate();
     console.log('✅ Conectado al servidor MySQL');
 
-    const dbName = process.env.TEST_DB_NAME || 'paleontologia_blog_test';
+    // 🔥 Usar la variable correcta del .env
+    const dbName = process.env.DB_TEST_NAME || 'game_of_bones_app_test';
 
     // Eliminar base de datos si existe
     console.log(`🗑️  Eliminando base de datos ${dbName} si existe...`);
