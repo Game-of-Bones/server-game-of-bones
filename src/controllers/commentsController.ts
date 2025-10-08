@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import Comment from '../models/Comment';
 // @ts-ignore
-import Post from '../models/Post'; 
+import Post from '../models/Post';
 // @ts-ignore
 import User from '../models/User';
 
@@ -24,17 +24,14 @@ interface CommentWithRelations {
  */
 export const createComment = async (req: Request, res: Response): Promise<void> => {
     try {
-        // Se elimina 'parent_id' ya que no está soportado en el modelo actual
-        const { post_id, user_id, content } = req.body; 
+        const { post_id, user_id, content } = req.body;
 
-        // Verificar que el post existe
         const post = await Post.findByPk(post_id);
         if (!post) {
             res.status(404).json({ message: 'Post no encontrado' });
             return;
         }
 
-        // Verificar que el usuario existe
         const user = await User.findByPk(user_id);
         if (!user) {
             res.status(404).json({ message: 'Usuario no encontrado' });
@@ -45,7 +42,6 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
             post_id: BigInt(post_id),
             user_id: BigInt(user_id),
             content,
-            // parent_id ha sido removido
         });
 
         res.status(201).json(comment);
@@ -57,16 +53,14 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
 
 /**
  * Obtiene todos los comentarios de un post.
- * No incluye lógica de anidación.
  */
 export const getCommentsByPost = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { post_id } = req.params;
+        const { postId } = req.params;
 
         const comments = await Comment.findAll({
-            // Se elimina el filtro parent_id: null
-            where: { 
-                post_id: BigInt(post_id),
+            where: {
+                post_id: BigInt(postId),
             },
             include: [
                 {
@@ -74,18 +68,15 @@ export const getCommentsByPost = async (req: Request, res: Response): Promise<vo
                     as: 'user',
                     attributes: ['id', 'username'],
                 },
-                // Se elimina la inclusión recursiva de 'replies'
             ],
             order: [['created_at', 'DESC']],
         });
 
-        // Convertir BigInt a string para serialización JSON
         const serializedComments = comments.map((c: any) => ({
             ...c.toJSON(),
             id: c.id.toString(),
             post_id: c.post_id.toString(),
             user_id: c.user_id.toString(),
-            // parent_id y replies han sido removidos
         }));
 
         res.json(serializedComments);
@@ -97,7 +88,6 @@ export const getCommentsByPost = async (req: Request, res: Response): Promise<vo
 
 /**
  * Obtiene un comentario por ID.
- * No incluye lógica de anidación.
  */
 export const getCommentById = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -110,7 +100,6 @@ export const getCommentById = async (req: Request, res: Response): Promise<void>
                     as: 'user',
                     attributes: ['id', 'username'],
                 },
-                // Se elimina la inclusión recursiva de 'replies'
             ],
         });
 
@@ -124,7 +113,6 @@ export const getCommentById = async (req: Request, res: Response): Promise<void>
             id: comment.id.toString(),
             post_id: comment.post_id.toString(),
             user_id: comment.user_id.toString(),
-            // parent_id ha sido removido
         };
 
         res.json(serializedComment);
@@ -151,7 +139,6 @@ export const updateComment = async (req: Request, res: Response): Promise<void> 
 
         await comment.update({ content });
 
-        // Convertir BigInt para la respuesta
         const serializedComment = {
             ...comment.toJSON(),
             id: comment.id.toString(),
@@ -180,12 +167,46 @@ export const deleteComment = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
-        // destroy() aplica soft delete gracias a la configuración paranoid: true en el modelo
-        await comment.destroy(); 
+        await comment.destroy();
 
         res.json({ message: 'Comentario eliminado correctamente' });
     } catch (error) {
         console.error('Error al eliminar comentario:', error);
         res.status(500).json({ message: 'Error al eliminar el comentario' });
+    }
+};
+
+/**
+ * Obtiene los comentarios hechos por un usuario.
+ */
+export const getCommentsByUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { userId } = req.params;
+
+        const comments = await Comment.findAll({
+            where: {
+                user_id: BigInt(userId),
+            },
+            include: [
+                {
+                    model: Post,
+                    as: 'post',
+                    attributes: ['id', 'title'],
+                },
+            ],
+            order: [['created_at', 'DESC']],
+        });
+
+        const serializedComments = comments.map((c: any) => ({
+            ...c.toJSON(),
+            id: c.id.toString(),
+            post_id: c.post_id.toString(),
+            user_id: c.user_id.toString(),
+        }));
+
+        res.json(serializedComments);
+    } catch (error) {
+        console.error('Error al obtener comentarios del usuario:', error);
+        res.status(500).json({ message: 'Error al obtener los comentarios del usuario' });
     }
 };

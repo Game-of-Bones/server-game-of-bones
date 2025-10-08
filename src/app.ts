@@ -1,5 +1,4 @@
 /**
- * APP.TS - Inicialización de Express con Sequelize
  * * Configuración principal de la aplicación
  */
 
