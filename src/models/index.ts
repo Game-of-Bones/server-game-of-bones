@@ -2,7 +2,7 @@
  * MODELS INDEX - Configuración y relaciones
  */
 
-import sequelize from '../config/database';
+import sequelize from '../database/database';
 import Comment from './Comment';
 
 // NOTA: Estas importaciones darán error temporal hasta que tus compis

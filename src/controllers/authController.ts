@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import sequelize from '../config/database';
+import sequelize from '../database/database';
 import { QueryTypes } from 'sequelize'; 
 import { CreateUserDTO, LoginDTO } from '../models/User';
 

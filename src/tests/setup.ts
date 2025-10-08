@@ -5,7 +5,7 @@
  */
 
 import { config } from 'dotenv';
-import sequelize from '../config/database';
+import sequelize from '../database/database';
 
 // Cargar variables de entorno
 config();
