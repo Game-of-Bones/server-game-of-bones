@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import sequelize from '../database/database';
-import { QueryTypes } from 'sequelize'; 
+import { User } from '../models/User';
 import { CreateUserDTO, LoginDTO } from '../models/User';
 
 /**
@@ -41,16 +40,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Verificar si el email ya existe
-    const existingUsers = await sequelize.query(
-      'SELECT id FROM users WHERE email = ?',
-      {
-        replacements: [email],
-        type: QueryTypes.SELECT
-      }
-    );
+    // Verificar si el email ya existe (Sequelize)
+    const existingEmail = await User.findOne({ where: { email } });
 
-    if (existingUsers.length > 0) {
+    if (existingEmail) {
       res.status(400).json({
         success: false,
         message: 'El email ya está registrado'
@@ -58,16 +51,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Verificar si el username ya existe
-    const existingUsernames = await sequelize.query(
-      'SELECT id FROM users WHERE username = ?',
-      {
-        replacements: [username],
-        type: QueryTypes.SELECT
-      }
-    );
+    // Verificar si el username ya existe (Sequelize)
+    const existingUsername = await User.findOne({ where: { username } });
 
-    if (existingUsernames.length > 0) {
+    if (existingUsername) {
       res.status(400).json({
         success: false,
         message: 'El username ya está en uso'
@@ -78,24 +65,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Crear usuario
-    await sequelize.query(
-      'INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)',
-      {
-        replacements: [username, email, hashedPassword, 'user']
-      }
-    );
-
-    // Obtener usuario creado
-    const users = await sequelize.query(
-      'SELECT id, username, email, role, created_at FROM users WHERE email = ?',
-      {
-        replacements: [email],
-        type: QueryTypes.SELECT
-      }
-    ) as any[];
-
-    const user = users[0];
+    // Crear usuario (Sequelize)
+    const user = await User.create({
+      username,
+      email,
+      password_hash: hashedPassword,
+      role: 'user'
+    });
 
     // Generar token JWT
     const token = jwt.sign(
@@ -145,24 +121,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Buscar usuario
-    const users = await sequelize.query(
-      'SELECT * FROM users WHERE email = ? AND deleted_at IS NULL',
-      {
-        replacements: [email],
-        type: QueryTypes.SELECT
-      }
-    ) as any[];
+    // Buscar usuario (Sequelize)
+    const user = await User.findOne({
+      where: { email }
+    });
 
-    if (users.length === 0) {
+    if (!user) {
       res.status(401).json({
         success: false,
         message: 'Credenciales inválidas'
       });
       return;
     }
-
-    const user = users[0];
 
     // Verificar contraseña
     const validPassword = await bcrypt.compare(password, user.password_hash);

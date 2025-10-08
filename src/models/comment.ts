@@ -4,7 +4,7 @@ import sequelize from '../database/database';
 // --- 1. Definición de Tipos ---
 
 // Atributos que existen en la tabla SQL
-interface CommentAttributes {
+export interface CommentAttributes {
   id: number;           
   post_id: number;      
   user_id: number;      
@@ -15,11 +15,11 @@ interface CommentAttributes {
 }
 
 // Atributos para la creación
-interface CommentCreationAttributes extends Optional<CommentAttributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
+export interface CommentCreationAttributes extends Optional<CommentAttributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
 
 // --- 2. Implementación del Modelo ---
 
-class Comment extends Model<CommentAttributes, CommentCreationAttributes> implements CommentAttributes {
+export class Comment extends Model<CommentAttributes, CommentCreationAttributes> implements CommentAttributes {
   public id!: number;
   public post_id!: number;
   public user_id!: number;
@@ -97,5 +97,3 @@ Comment.init(
       ]
   }
 );
-
-export default Comment;

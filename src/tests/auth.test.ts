@@ -1,8 +1,9 @@
+
 import request from 'supertest';
 import app from '../app';
-import pool from '../config/database';
+import sequelize from '../database/database';
+import { User } from '../models/User';
 
-// Datos de prueba
 const testUser = {
   username: 'testuser',
   email: 'test@gameofbones.com',
@@ -10,26 +11,25 @@ const testUser = {
 };
 
 describe('Auth Endpoints', () => {
-
-  // Limpiar datos de prueba antes de los tests
+  
   beforeAll(async () => {
-    await pool.execute(
-      'DELETE FROM users WHERE email = ?',
-      [testUser.email]
-    );
+    // Sincronizar base de datos de test
+    await sequelize.sync({ force: true });
   });
 
-  // Limpiar después de los tests
   afterAll(async () => {
-    await pool.execute(
-      'DELETE FROM users WHERE email = ?',
-      [testUser.email]
-    );
-    await pool.end();
+    // Limpiar y cerrar conexión
+    await User.destroy({ where: {}, force: true });
+    await sequelize.close();
+  });
+
+  beforeEach(async () => {
+    // Limpiar usuarios antes de cada test
+    await User.destroy({ where: {}, force: true });
   });
 
   describe('POST /api/auth/register', () => {
-
+    
     test('Debe registrar un nuevo usuario exitosamente', async () => {
       const response = await request(app)
         .post('/api/auth/register')
@@ -47,6 +47,14 @@ describe('Auth Endpoints', () => {
     });
 
     test('No debe registrar usuario con email duplicado', async () => {
+      // Crear usuario primero
+      await User.create({
+        username: testUser.username,
+        email: testUser.email,
+        password_hash: 'hashedpassword',
+        role: 'user'
+      });
+
       const response = await request(app)
         .post('/api/auth/register')
         .send(testUser)
@@ -96,6 +104,17 @@ describe('Auth Endpoints', () => {
   });
 
   describe('POST /api/auth/login', () => {
+    
+    beforeEach(async () => {
+      // Crear usuario de prueba para login
+      const hashedPassword = await require('bcrypt').hash(testUser.password, 12);
+      await User.create({
+        username: testUser.username,
+        email: testUser.email,
+        password_hash: hashedPassword,
+        role: 'user'
+      });
+    });
 
     test('Debe hacer login exitosamente con credenciales correctas', async () => {
       const response = await request(app)
