@@ -7,6 +7,33 @@ import cors from 'cors';
 import helmet from 'helmet';
 import router from './router';
 
+// Definimos un puerto predeterminado para el banner. El valor real se tomaría en el archivo de inicio.
+const PORT = process.env.PORT || 3000;
+
+// ============================================
+// BANNER ASCII (El dibujo solicitado)
+// ============================================
+
+// Definición del banner ASCII para la consola.
+// Usamos backticks para soportar múltiples líneas y la interpolación de variables.
+const SERVER_BANNER = `
+╔═══════════════════════════════════════════════╗
+║                                               ║
+║           🦴 GAME OF BONES API 🦴             ║
+║                                               ║
+║      Server running on http://localhost:${PORT}  ║
+║                                               ║
+╚═══════════════════════════════════════════════╝
+`;
+
+// Función que exportamos para que el archivo de inicio (ej. index.ts)
+// pueda llamar y mostrar el banner en la consola.
+export const logServerBanner = (actualPort: number | string = PORT) => {
+    // Reemplazamos el PORT predeterminado en el string con el PORT real si es necesario.
+    const banner = SERVER_BANNER.replace(`:${PORT}`, `:${actualPort}`);
+    console.log(banner);
+};
+
 const app: Application = express();
 
 // ============================================

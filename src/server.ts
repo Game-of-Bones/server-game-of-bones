@@ -1,13 +1,13 @@
 /**
  * PUNTO DE ENTRADA DEL SERVIDOR
- * 
- * Inicializa y arranca el servidor Express
+ * * Inicializa y arranca el servidor Express
  */
 
 import dotenv from 'dotenv';
 dotenv.config();
 
-import app from './app';
+// Se importa la función logServerBanner junto con la instancia de app
+import app, { logServerBanner } from './app'; 
 import sequelize, { testConnection } from './database/database';
 import './models'; // Importar modelos para registrarlos
 
@@ -42,9 +42,14 @@ const startServer = async () => {
 
     // 3. Iniciar servidor
     app.listen(PORT, () => {
+      
+      // 🦴 Mostrar el banner ASCII al iniciar el servidor 🦴
+      logServerBanner(PORT);
+
+      // Logs de información detallada
       console.log('🚀 Servidor corriendo en puerto', PORT);
       console.log(`📍 Ambiente: ${NODE_ENV}`);
-      console.log(`🗄️  Base de datos: ${getDbName()}`);
+      console.log(`🗄️  Base de datos: ${getDbName()}`);
       console.log('🔗 Health check:', `http://localhost:${PORT}/health`);
       console.log('🔗 API:', `http://localhost:${PORT}/gameofbones`);
       
@@ -54,7 +59,7 @@ const startServer = async () => {
       } else if (NODE_ENV === 'production') {
         console.log('🏭 Modo PRODUCCIÓN activado');
       } else {
-        console.log('🛠️  Modo DESARROLLO activado');
+        console.log('🛠️  Modo DESARROLLO activado');
       }
       console.log('');
     });
