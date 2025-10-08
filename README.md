@@ -1,3 +1,4 @@
+#test rama 8
 # 1️⃣ Create local MySQL databases
 mysql -u root -p -e "CREATE DATABASE game_of_bones_app;"
 mysql -u root -p -e "CREATE DATABASE game_of_bones_app_test;"
