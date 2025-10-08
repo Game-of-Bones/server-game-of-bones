@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import express from 'express';
 import dotenv from 'dotenv';
 <<<<<<< HEAD
@@ -15,48 +16,83 @@ import path from 'path';
 >>>>>>> 403299b0eff80405ab06c85f01073d16b379e6fb
 // Load environment variables
 dotenv.config();
+=======
+/**
+ * APP.TS - Inicialización de Express con Sequelize
+ * * Configuración principal de la aplicación
+ */
 
-const app = express();
-// Nota: La variable PORT es 3000
-const PORT = process.env.PORT || 3000;
+import express, { Application } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { syncDatabase } from './models'; // Reintroducido para la estructura inicial
+import router from './router'; 
+// @ts-ignore 
+import { errorHandler } from './middleware/errorHandler';
+>>>>>>> 5d2abea58a4f5537dffb53d19f27c22d017c7704
 
-// Middleware to parse JSON
+const app: Application = express();
+
+// ============================================
+// MIDDLEWARES
+// ============================================
+app.use(helmet());
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Health check route
-app.get('/gameofbones', (req, res) => {
-  res.json({ message: 'Game of Bones API 🦴' });
+// ============================================
+// RUTAS
+// ============================================
+// Ruta base cambiada a /gameofbones
+app.use('/gameofbones', router);
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        // Mensaje de bienvenida actualizado
+        message: '¡Bienvenido a la Game of Bones API! La ruta principal para los endpoints es /gameofbones'
+    });
 });
 
-// usamos el pool importado directamente
-app.use('/gameofbones', createCommentsRouter(pool));
-app.use('/gameofbones', likesRoutes);
-// Si tuvieras el router de auth (de tu compañera) se montaría así:
-// app.use('/gameofbones/auth', authRouter); 
+// ============================================
+// ERROR HANDLER
+// ============================================
+//app.use(errorHandler);
 
+// ============================================
+// INICIALIZACIÓN
+// ============================================
+const PORT = process.env.PORT || 3000;
 
-
-
-// Function to start the server
 const startServer = async () => {
-  try {
-    // Test database connection before starting server
-    await testConnection();
-
-    // If DB connection successful, start the server
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT} (API Base: http://localhost:${PORT}/gameofbones)`);
-    });
-  } catch (error) {
-    console.error('💥 Error starting server:', error);
-    process.exit(1); // Exit if database connection fails
-  }
+    try {
+        // Sincronizar base de datos (sin eliminar datos existentes)
+        await syncDatabase(false);
+        
+        app.listen(PORT, () => {
+            console.log(`
+╔═══════════════════════════════════════════════╗
+║                                               ║
+║         🦴 GAME OF BONES API 🦴              ║
+║                                               ║
+║ Server running on http://localhost:${PORT}    ║
+║                                               ║
+╚═══════════════════════════════════════════════╝
+            `);
+        });
+    } catch (error) {
+        console.error('❌ Error al iniciar el servidor:', error);
+        process.exit(1);
+    }
 };
 const swaggerDocument = YAML.load(path.join(__dirname, '../docs/swagger.yaml'));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Execute the start function
+// Iniciar servidor
 startServer();
 
 export default app;
