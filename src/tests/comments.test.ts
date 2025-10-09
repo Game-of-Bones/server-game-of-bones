@@ -7,7 +7,7 @@
 
 import request from 'supertest';
 import app from '../app';
-import Comment from '../models/Comment';
+import { Comment } from '../models/Comment'; 
 
 // Declarar tipos temporales para User y Post
 type User = any;

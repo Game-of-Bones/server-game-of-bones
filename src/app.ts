@@ -1,11 +1,38 @@
+/**
+ * Configuración principal de la aplicación
+ */
 
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { syncDatabase } from './models'; // Reintroducido para la estructura inicial
-import router from './router'; 
-// @ts-ignore 
-import { errorHandler } from './middleware/errorHandler';
+import router from './router';
+
+// Definimos un puerto predeterminado para el banner. El valor real se tomaría en el archivo de inicio.
+const PORT = process.env.PORT || 3000;
+
+// ============================================
+// BANNER ASCII (El dibujo solicitado)
+// ============================================
+
+// Definición del banner ASCII para la consola.
+// Usamos backticks para soportar múltiples líneas y la interpolación de variables.
+const SERVER_BANNER = `
+╔═══════════════════════════════════════════════╗
+║                                               ║
+║           🦴 GAME OF BONES API 🦴             ║
+║                                               ║
+║      Server running on http://localhost:${PORT}  ║
+║                                               ║
+╚═══════════════════════════════════════════════╝
+`;
+
+// Función que exportamos para que el archivo de inicio (ej. index.ts)
+// pueda llamar y mostrar el banner en la consola.
+export const logServerBanner = (actualPort: number | string = PORT) => {
+    // Reemplazamos el PORT predeterminado en el string con el PORT real si es necesario.
+    const banner = SERVER_BANNER.replace(`:${PORT}`, `:${actualPort}`);
+    console.log(banner);
+};
 
 const app: Application = express();
 
@@ -21,52 +48,56 @@ app.use('/gameofbones', router);
 // ============================================
 // RUTAS
 // ============================================
-// Ruta base cambiada a /gameofbones
-app.use('/gameofbones', router);
-
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'ok', 
-        timestamp: new Date().toISOString(),
-        // Mensaje de bienvenida actualizado
-        message: '¡Bienvenido a la Game of Bones API! La ruta principal para los endpoints es /gameofbones'
-    });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    message: '¡Bienvenido a la Game of Bones API!'
+  });
 });
 
-// ============================================
-// ERROR HANDLER
-// ============================================
-//app.use(errorHandler);
+// Ruta raíz de la API - muestra información de bienvenida
+app.get('/gameofbones', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Game of Bones API',
+    version: '1.0.0',
+    description: 'API REST para Blog de Paleontología',
+    endpoints: {
+      health: '/health',
+      users: '/gameofbones/users',
+      posts: '/gameofbones/posts',
+      comments: '/gameofbones/comments',
+      tags: '/gameofbones/tags',
+      categories: '/gameofbones/categories'
+    },
+    documentation: 'https://github.com/Game-of-Bones/server-game-of-bones'
+  });
+});
+
+// Todas las rutas de la API
+app.use('/gameofbones', router);
 
 // ============================================
-// INICIALIZACIÓN
+// MANEJO DE ERRORES
 // ============================================
-const PORT = process.env.PORT || 3000;
+// Middleware de manejo de errores - debe ir al final
+// app.use(errorHandler);
 
-const startServer = async () => {
-    try {
-        // Sincronizar base de datos (sin eliminar datos existentes)
-        await syncDatabase(false);
-        
-        app.listen(PORT, () => {
-            console.log(`
-╔═══════════════════════════════════════════════╗
-║                                               ║
-║         🦴 GAME OF BONES API 🦴              ║
-║                                               ║
-║ Server running on http://localhost:${PORT}    ║
-║                                               ║
-╚═══════════════════════════════════════════════╝
-            `);
-        });
-    } catch (error) {
-        console.error('❌ Error al iniciar el servidor:', error);
-        process.exit(1);
+// Ruta 404 - debe ir al final antes del errorHandler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Ruta no encontrada',
+    availableEndpoints: {
+      health: '/health',
+      api: '/gameofbones',
+      users: '/gameofbones/users',
+      posts: '/gameofbones/posts',
+      comments: '/gameofbones/comments'
     }
-};
-
-// Iniciar servidor
-startServer();
+  });
+});
 
 export default app;

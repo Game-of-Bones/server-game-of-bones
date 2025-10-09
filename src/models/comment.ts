@@ -1,34 +1,34 @@
 import { Model, DataTypes, Optional } from 'sequelize';
-import sequelize from '../config/database';
+import sequelize from '../database/database';
 
 // --- 1. Definición de Tipos ---
 
 // Atributos que existen en la tabla SQL
-interface CommentAttributes {
-  id: bigint;
-  post_id: bigint;
-  user_id: bigint;
+export interface CommentAttributes {
+  id: number;           
+  post_id: number;      
+  user_id: number;      
   content: string;
   created_at?: Date;
   updated_at?: Date;
-  deleted_at?: Date | null; // Para soft delete
+  deleted_at?: Date | null;
 }
 
-// Atributos para la creación (id, y timestamps son opcionales al crear)
-interface CommentCreationAttributes extends Optional<CommentAttributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
+// Atributos para la creación
+export interface CommentCreationAttributes extends Optional<CommentAttributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
 
 // --- 2. Implementación del Modelo ---
 
-class Comment extends Model<CommentAttributes, CommentCreationAttributes> implements CommentAttributes {
-  public id!: bigint;
-  public post_id!: bigint;
-  public user_id!: bigint;
+export class Comment extends Model<CommentAttributes, CommentCreationAttributes> implements CommentAttributes {
+  public id!: number;
+  public post_id!: number;
+  public user_id!: number;
   public content!: string;
 
   // Timestamps
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
-  public readonly deleted_at!: Date | null; // Usado por paranoid: true
+  public readonly deleted_at!: Date | null;
 }
 
 // --- 3. Inicialización del Esquema ---
@@ -36,44 +36,64 @@ class Comment extends Model<CommentAttributes, CommentCreationAttributes> implem
 Comment.init(
   {
       id: {
-          type: DataTypes.BIGINT.UNSIGNED, // Coincide con BIGINT UNSIGNED
+          type: DataTypes.INTEGER.UNSIGNED, 
           primaryKey: true,
           autoIncrement: true,
           comment: 'Identificador único del comentario',
       },
       post_id: {
-          type: DataTypes.BIGINT.UNSIGNED, // Usamos UNSIGNED para uniformidad con 'id'
+          type: DataTypes.INTEGER.UNSIGNED, 
           allowNull: false,
           comment: 'ID del post al que pertenece el comentario',
-          // Las referencias fk_comments_post se configurarán en src/models/index.ts
-          // para evitar errores de referencia circular si post.ts aún no está disponible.
       },
       user_id: {
-          type: DataTypes.BIGINT.UNSIGNED, // Usamos UNSIGNED para uniformidad con 'id'
+          type: DataTypes.INTEGER.UNSIGNED, 
           allowNull: false,
           comment: 'ID del usuario que hizo el comentario',
-          // Las referencias fk_comments_user se configurarán en src/models/index.ts
       },
       content: {
           type: DataTypes.TEXT,
           allowNull: false,
           comment: 'Contenido del comentario',
+          validate: {
+              notEmpty: {
+                  msg: 'El contenido no puede estar vacío'
+              },
+              len: {
+                  args: [1, 5000],
+                  msg: 'El comentario debe tener entre 1 y 5000 caracteres'
+              }
+          }
       },
   },
   {
       sequelize,
       tableName: 'comments',
       modelName: 'Comment',
-      // Opciones de Soft Delete y Nombres de Columna
-      timestamps: true, // Mapea a created_at y updated_at
-      underscored: true, // Usa snake_case (post_id en lugar de postId)
-      paranoid: true, // Habilita soft delete, usando la columna `deleted_at`
-      deletedAt: 'deleted_at', // Especifica el nombre de la columna para soft delete
+      timestamps: true,
+      underscored: true,
+      paranoid: true,
+      deletedAt: 'deleted_at',
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
       
-      // Configuraciones de MySQL
       charset: 'utf8mb4',
       collate: 'utf8mb4_unicode_ci',
+      
+      // Índices para mejorar rendimiento
+      indexes: [
+          {
+              name: 'idx_comments_post_id',
+              fields: ['post_id']
+          },
+          {
+              name: 'idx_comments_user_id',
+              fields: ['user_id']
+          },
+          {
+              name: 'idx_comments_created_at',
+              fields: ['created_at']
+          }
+      ]
   }
 );
-
-export default Comment;

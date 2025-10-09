@@ -6,11 +6,7 @@
 
 import dotenv from 'dotenv';
 import { syncDatabase } from '../../models';
-// @ts-ignore - Seeders temporales hasta que se desarrollen
-import { seedUsers } from './01-users';
-// @ts-ignore - Seeders temporales hasta que se desarrollen
-import { seedPosts } from './02-posts';
-import seedComments from './03-comments';
+import { seedComments } from './03-comments';
 
 dotenv.config();
 
@@ -22,24 +18,28 @@ const runAllSeeders = async (): Promise<void> => {
     await syncDatabase(true);
     console.log('');
 
-    // Ejecutar seeders en orden
-    // @ts-ignore
-    if (typeof seedUsers === 'function') {
-      await seedUsers();
-    } else {
-      console.log('⚠️  Seeder de usuarios no disponible aún');
-    }
-
-    // @ts-ignore
-    if (typeof seedPosts === 'function') {
-      await seedPosts();
-    } else {
-      console.log('⚠️  Seeder de posts no disponible aún');
-    }
-
+    // ============================================
+    // SEEDERS DISPONIBLES
+    // ============================================
+    
+    // Seeder de Comments (único disponible por ahora)
     await seedComments();
 
+    // ============================================
+    // SEEDERS PENDIENTES (de otros compañeros)
+    // ============================================
+    
+    /*
+    // Descomentar cuando estén disponibles:
+    
+    // await seedUsers();   // Pendiente: User seeder
+    // await seedPosts();   // Pendiente: Post seeder
+    // await seedLikes();   // Pendiente: Like seeder
+    */
+
     console.log('\n✅ Todos los seeders ejecutados exitosamente');
+    console.log('📊 Datos de prueba cargados en la base de datos\n');
+    
     process.exit(0);
   } catch (error) {
     console.error('\n❌ Error ejecutando seeders:', error);

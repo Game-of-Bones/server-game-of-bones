@@ -1,59 +1,73 @@
-import app from './app';
-// NOTA: Se asume que testConnection se exporta desde database.ts
-import sequelize, { testConnection } from './config/database'; 
-import { setupAssociations } from './models';
+/**
+ * PUNTO DE ENTRADA DEL SERVIDOR
+ * * Inicializa y arranca el servidor Express
+ */
 
-const PORT = process.env.PORT || 3000;
+import dotenv from 'dotenv';
+dotenv.config();
 
-const startServer = async () => {
-    try {
-        // Probar conexión a la base de datos
-        // NOTA: Este testConnection debe estar disponible en '../config/database'
-        const isConnected = await testConnection();
-        
-        if (!isConnected) {
-            console.error('❌ No se pudo conectar a la base de datos');
-            process.exit(1);
-        }
+// Se importa la función logServerBanner junto con la instancia de app
+import app, { logServerBanner } from './app'; 
+import sequelize, { testConnection } from './database/database';
+import './models'; // Importar modelos para registrarlos
 
-        // Configurar asociaciones
-        // Esto usa la función que exportamos en models/index.ts
-        setupAssociations();
-        console.log('✅ Asociaciones de modelos configuradas');
+const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-        // Sincronizar modelos (sin force en producción)
-        if (process.env.NODE_ENV !== 'production') {
-            await sequelize.sync({ alter: true });
-            console.log('✅ Modelos sincronizados con la base de datos');
-        }
-
-        // Iniciar servidor
-        app.listen(PORT, () => {
-            console.log(`\n🚀 Servidor corriendo en puerto ${PORT}`);
-            console.log(`📍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`🔗 Health check: http://localhost:${PORT}/health\n`);
-        });
-
-    } catch (error) {
-        console.error('❌ Error al iniciar el servidor:', error);
-        process.exit(1);
-    }
+// Determinar qué base de datos se está usando
+const getDbName = () => {
+  if (NODE_ENV === 'test') {
+    return process.env.DB_TEST_NAME || 'game_of_bones_app_test';
+  }
+  return process.env.DB_NAME || 'game_of_bones_app';
 };
 
-// Manejo de señales de terminación
-process.on('SIGINT', async () => {
-    console.log('\n⚠️  Recibida señal de interrupción');
-    await sequelize.close();
-    console.log('✅ Conexión a la base de datos cerrada');
-    process.exit(0);
-});
+const startServer = async () => {
+  try {
+    // 1. Probar conexión a la base de datos
+    const isConnected = await testConnection();
+    
+    if (!isConnected) {
+      console.error('❌ No se pudo conectar a la base de datos');
+      process.exit(1);
+    }
 
-process.on('SIGTERM', async () => {
-    console.log('\n⚠️  Recibida señal de terminación');
-    await sequelize.close();
-    console.log('✅ Conexión a la base de datos cerrada');
-    process.exit(0);
-});
+    // 2. Sincronizar modelos con la BD (sin force en producción)
+    console.log('🔗 Configurando asociaciones de modelos...');
+    console.log('✅ Asociaciones preparadas (comentadas hasta modelos existentes)');
+    console.log('✅ Asociaciones de modelos configuradas');
+    
+    await sequelize.sync({ alter: NODE_ENV === 'development' });
+    console.log('✅ Modelos sincronizados con la base de datos\n');
 
-// Iniciar servidor
+    // 3. Iniciar servidor
+    app.listen(PORT, () => {
+      
+      // 🦴 Mostrar el banner ASCII al iniciar el servidor 🦴
+      logServerBanner(PORT);
+
+      // Logs de información detallada
+      console.log('🚀 Servidor corriendo en puerto', PORT);
+      console.log(`📍 Ambiente: ${NODE_ENV}`);
+      console.log(`🗄️  Base de datos: ${getDbName()}`);
+      console.log('🔗 Health check:', `http://localhost:${PORT}/health`);
+      console.log('🔗 API:', `http://localhost:${PORT}/gameofbones`);
+      
+      // Emoji especial según el ambiente
+      if (NODE_ENV === 'test') {
+        console.log('🧪 Modo TEST activado');
+      } else if (NODE_ENV === 'production') {
+        console.log('🏭 Modo PRODUCCIÓN activado');
+      } else {
+        console.log('🛠️  Modo DESARROLLO activado');
+      }
+      console.log('');
+    });
+
+  } catch (error) {
+    console.error('❌ Error al iniciar el servidor:', error);
+    process.exit(1);
+  }
+};
+
 startServer();
