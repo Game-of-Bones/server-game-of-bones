@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { createFossil } from "../controllers/GobControllerPost";
+import { createFossil, getAllFossils, updateFossil,deleteFossil, getFossilById } from "../controllers/GobControllerPost";
 
 const router = Router();
 
 router.post("/", createFossil);
+router.get("/", getAllFossils);
+router.get("/:id", getFossilById);
+router.put("/:id", updateFossil);
+router.delete("/:id", deleteFossil);
 
 // Ruta de prueba opcional
 router.get("/test", (req, res) => {

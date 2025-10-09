@@ -1,6 +1,6 @@
 import express from "express";
-import fossilRoutes from "./routes/GobRoutesPost"; // Ajusta path
-import sequelize from "./database/database";       // Ajusta path a tu conexión
+import fossilRoutes from "../routes/GobRoutesPost";
+import sequelize from "../database/database";
 
 const app = express();
 
@@ -9,10 +9,13 @@ app.use("/api/fossils", fossilRoutes);
 
 (async () => {
   try {
-    await sequelize.sync();
+    await sequelize.authenticate();
+    console.log("🟢 Conexión con la base de datos establecida correctamente");
+
+    await sequelize.sync(); // o .sync({ alter: true }) en desarrollo
     console.log("📦 Modelos sincronizados con la base de datos");
   } catch (error) {
-    console.error("❌ Error al sincronizar modelos:", error);
+    console.error("❌ Error al inicializar la base de datos:", error);
   }
 })();
 

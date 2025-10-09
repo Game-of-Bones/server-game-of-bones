@@ -56,3 +56,76 @@ export const createFossil: RequestHandler<{}, any, FossilRequestBody> = async (r
     res.status(500).json({ error: "Error al crear el fósil" });
   }
 };
+
+
+/* -------------------- READ ALL -------------------- */
+export const getAllFossils: RequestHandler = async (req, res) => {
+  try {
+    const fossils = await Fossil.findAll();
+    res.status(200).json({ data: fossils });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener los fósiles" });
+  }
+};
+
+/* -------------------- READ ONE -------------------- */
+export const getFossilById: RequestHandler<{ id: string }> = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fossil = await Fossil.findByPk(id);
+
+    if (!fossil) {
+      return res.status(404).json({ error: "Fósil no encontrado" });
+    }
+
+    res.status(200).json({ data: fossil });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener el fósil" });
+  }
+};
+
+/* -------------------- UPDATE -------------------- */
+export const updateFossil: RequestHandler<{ id: string }, any, Partial<FossilRequestBody>> = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fossil = await Fossil.findByPk(id);
+
+    if (!fossil) {
+      return res.status(404).json({ error: "Fósil no encontrado" });
+    }
+
+    await fossil.update({
+      ...req.body,
+      discovery_date: req.body.discovery_date ? new Date(req.body.discovery_date) : fossil.discovery_date,
+    });
+
+    res.status(200).json({
+      message: "Fósil actualizado correctamente",
+      data: fossil,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al actualizar el fósil" });
+  }
+};
+
+/* -------------------- DELETE -------------------- */
+export const deleteFossil: RequestHandler<{ id: string }> = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fossil = await Fossil.findByPk(id);
+
+    if (!fossil) {
+      return res.status(404).json({ error: "Fósil no encontrado" });
+    }
+
+    await fossil.destroy();
+
+    res.status(200).json({ message: "Fósil eliminado correctamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al eliminar el fósil" });
+  }
+};
