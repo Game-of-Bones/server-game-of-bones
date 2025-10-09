@@ -1,25 +1,3 @@
-<<<<<<< HEAD
-import express from 'express';
-import dotenv from 'dotenv';
-<<<<<<< HEAD
-import pool, { testConnection } from './config/database';
-// Importamos el router de comentarios
-import { createCommentsRouter } from '../src/routes/comments';
-import likesRoutes from '../src/routes/likes';
-// import authRouter from './routes/auth.routes'; // Para el futuro
-
-=======
-import { testConnection } from './config/database';
-import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
-import path from 'path';
->>>>>>> 403299b0eff80405ab06c85f01073d16b379e6fb
-// Load environment variables
-dotenv.config();
-=======
-/**
- * * Configuración principal de la aplicación
- */
 
 import express, { Application } from 'express';
 import cors from 'cors';
@@ -28,7 +6,6 @@ import { syncDatabase } from './models'; // Reintroducido para la estructura ini
 import router from './router'; 
 // @ts-ignore 
 import { errorHandler } from './middleware/errorHandler';
->>>>>>> 5d2abea58a4f5537dffb53d19f27c22d017c7704
 
 const app: Application = express();
 
@@ -39,6 +16,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/gameofbones', router);
 
 // ============================================
 // RUTAS
@@ -87,9 +65,6 @@ const startServer = async () => {
         process.exit(1);
     }
 };
-const swaggerDocument = YAML.load(path.join(__dirname, '../docs/swagger.yaml'));
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Iniciar servidor
 startServer();
