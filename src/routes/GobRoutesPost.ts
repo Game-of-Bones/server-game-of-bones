@@ -3,7 +3,6 @@ import { createFossil } from "../controllers/GobControllerPost";
 
 const router = Router();
 
-// Endpoint para crear fósil
 router.post("/", createFossil);
 
 // Ruta de prueba opcional

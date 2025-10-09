@@ -1,11 +1,17 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import sequelize from "../database/database";
+import sequelize from "../database/database"; // Ajusta si tu path es diferente
 
-// ENUMS
-export type FossilType = "dinosaur" | "mammal" | "plant";
-export type Status = "active" | "inactive" | "archived";
+// Tipos para TypeScript
+export type FossilType =
+  | "bones_teeth"
+  | "shell_exoskeletons"
+  | "plant_impressions"
+  | "tracks_traces"
+  | "amber_insects";
 
-// ATRIBUTOS DEL MODELO
+export type Status = "draft" | "published";
+
+// Atributos del modelo
 interface FossilAttributes {
   id: number;
   title: string;
@@ -13,8 +19,8 @@ interface FossilAttributes {
   image_url?: string | null;
   discovery_date?: Date | null;
   location?: string | null;
-  palaeontologist?: string | null;
-  fossil_type?: FossilType | null;
+  paleontologist?: string | null;
+  fossil_type: FossilType;
   geological_period?: string | null;
   author_id: number;
   status: Status;
@@ -24,19 +30,31 @@ interface FossilAttributes {
   deletedAt?: Date | null;
 }
 
-// CAMPOS OPCIONALES AL CREAR
-interface FossilCreationAttributes extends Optional<FossilAttributes, 
-  "id" | "image_url" | "discovery_date" | "location" | "palaeontologist" | "fossil_type" | "geological_period" | "status" | "source" | "deletedAt"> {}
+// Campos opcionales al crear
+interface FossilCreationAttributes
+  extends Optional<
+    FossilAttributes,
+    | "id"
+    | "image_url"
+    | "discovery_date"
+    | "location"
+    | "paleontologist"
+    | "geological_period"
+    | "status"
+    | "source"
+    | "deletedAt"
+  > {}
 
-class Fossil extends Model<FossilAttributes, FossilCreationAttributes> implements FossilAttributes {
+class Fossil extends Model<FossilAttributes, FossilCreationAttributes>
+  implements FossilAttributes {
   public id!: number;
   public title!: string;
   public summary!: string;
   public image_url?: string | null;
   public discovery_date?: Date | null;
   public location?: string | null;
-  public palaeontologist?: string | null;
-  public fossil_type?: FossilType | null;
+  public paleontologist?: string | null;
+  public fossil_type!: FossilType;
   public geological_period?: string | null;
   public author_id!: number;
   public status!: Status;
@@ -52,22 +70,36 @@ Fossil.init(
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
     title: { type: DataTypes.STRING, allowNull: false },
     summary: { type: DataTypes.TEXT, allowNull: false },
-    image_url: { type: DataTypes.STRING, allowNull: true },
+    image_url: { type: DataTypes.STRING(500), allowNull: true },
     discovery_date: { type: DataTypes.DATE, allowNull: true },
-    location: { type: DataTypes.STRING, allowNull: true },
-    palaeontologist: { type: DataTypes.STRING, allowNull: true },
-    fossil_type: { type: DataTypes.ENUM("dinosaur", "mammal", "plant"), allowNull: true },
-    geological_period: { type: DataTypes.STRING, allowNull: true },
+    location: { type: DataTypes.STRING(255), allowNull: true },
+    paleontologist: { type: DataTypes.STRING(255), allowNull: true },
+    fossil_type: {
+      type: DataTypes.ENUM(
+        "bones_teeth",
+        "shell_exoskeletons",
+        "plant_impressions",
+        "tracks_traces",
+        "amber_insects"
+      ),
+      allowNull: false,
+      defaultValue: "bones_teeth",
+    },
+    geological_period: { type: DataTypes.STRING(100), allowNull: true },
     author_id: { type: DataTypes.BIGINT, allowNull: false },
-    status: { type: DataTypes.ENUM("active", "inactive", "archived"), defaultValue: "active" },
-    source: { type: DataTypes.STRING, allowNull: true },
+    status: {
+      type: DataTypes.ENUM("draft", "published"),
+      allowNull: false,
+      defaultValue: "draft",
+    },
+    source: { type: DataTypes.STRING(500), allowNull: true },
   },
   {
     sequelize,
     tableName: "fossils",
-    timestamps: true,    // habilita createdAt y updatedAt
-    paranoid: true,      // habilita deletedAt para soft delete
-    underscored: true,   // convierte camelCase a snake_case en DB
+    timestamps: true,
+    paranoid: true,
+    underscored: true,
   }
 );
 

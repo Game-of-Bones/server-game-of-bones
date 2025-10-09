@@ -1,13 +1,14 @@
-import { Request, Response } from "express";
+import { RequestHandler } from "express";
 import Fossil, { FossilType, Status } from "../models/GobModelPost";
 
+// Definimos la interfaz para el body de la petición
 interface FossilRequestBody {
   title: string;
   summary: string;
   image_url?: string;
   discovery_date?: string;
   location?: string;
-  palaeontologist?: string;
+  paleontologist?: string;
   fossil_type?: FossilType;
   geological_period?: string;
   author_id: number;
@@ -15,10 +16,8 @@ interface FossilRequestBody {
   source?: string;
 }
 
-export const createFossil = async (
-  req: Request<{}, {}, FossilRequestBody>,
-  res: Response
-): Promise<void> => {
+// Creamos el controller usando RequestHandler
+export const createFossil: RequestHandler<{}, any, FossilRequestBody> = async (req, res) => {
   try {
     const {
       title,
@@ -26,7 +25,7 @@ export const createFossil = async (
       image_url,
       discovery_date,
       location,
-      palaeontologist,
+      paleontologist,
       fossil_type,
       geological_period,
       author_id,
@@ -40,11 +39,11 @@ export const createFossil = async (
       image_url,
       discovery_date: discovery_date ? new Date(discovery_date) : undefined,
       location,
-      palaeontologist,
-      fossil_type,
+      paleontologist,
+      fossil_type: fossil_type ?? "bones_teeth",
       geological_period,
       author_id,
-      status,
+      status: status ?? "draft",
       source,
     });
 
