@@ -2,14 +2,9 @@
  * MODELS INDEX - Configuración y relaciones
  */
 
-<<<<<<< HEAD
-import sequelize from '../config/database';
-import comment from './comment';
-=======
 import sequelize from '../database/database';
-import { Comment } from './Comment';
+import { Comment } from './comment';
 import { User } from './User';
->>>>>>> cea54241193131e4d1ece39afbf7c8ce72e7a278
 
 // NOTA: Estas importaciones darán error temporal hasta que tus compis
 // desarrollen sus modelos. Es NORMAL y esperado.
@@ -128,19 +123,10 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
 
 export {
     sequelize,
-<<<<<<< HEAD
-    comment,
-    // Elimina setupAssociations y syncDatabase de este bloque,
-    // ya que se exportan como 'export const'.
-    // User,
-    // Post,
-    // Like
-=======
     Comment,
     User,
     // Post,    // Pendiente
     // Like     // Pendiente
->>>>>>> cea54241193131e4d1ece39afbf7c8ce72e7a278
 };
 
 export default sequelize;
