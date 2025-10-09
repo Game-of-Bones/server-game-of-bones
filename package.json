@@ -1,25 +1,23 @@
 {
   "name": "server-game-of-bones",
   "version": "1.0.0",
-  "description": "",
+  "description": "API REST para Game of Bones - Blog de Paleontología",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/server.ts",
+    "dev:test": "cross-env NODE_ENV=test nodemon --exec ts-node src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc",
+    
     "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage",
-    "init:db": "ts-node src/database/init.ts",
-    "init:test": "ts-node src/database/initTest.ts",
-    "test:reset": "npm run init:test && npm run db:sync:test",
+    
+    "db:fresh": "ts-node -e \"require('./src/models').syncDatabase(true).then(() => process.exit(0))\"",
     "seed": "ts-node src/server/script/runAllSeeders.ts",
-    "seed:users": "ts-node src/server/script/01-users.ts",
-    "seed:posts": "ts-node src/server/script/02-posts.ts",
-    "seed:comments": "ts-node src/server/script/03-comments.ts",
-    "db:sync": "ts-node -e \"require('./src/models').syncDatabase(false).then(() => process.exit(0))\"",
-    "db:reset": "ts-node -e \"require('./src/models').syncDatabase(true).then(() => process.exit(0))\"",
-    "db:sync:test": "cross-env NODE_ENV=test ts-node -e \"require('./src/models').syncDatabase(false).then(() => process.exit(0))\"",
+    
+    "init:test": "ts-node src/database/initTest.ts",
+    
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
@@ -27,8 +25,8 @@
     "type": "git",
     "url": "git+https://github.com/Game-of-Bones/server-game-of-bones.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["paleontologia", "api", "rest", "nodejs", "typescript", "sequelize"],
+  "author": "Game of Bones Team",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Game-of-Bones/server-game-of-bones/issues"
@@ -47,6 +45,7 @@
     "validator": "^13.15.15"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/helmet": "^0.0.48",

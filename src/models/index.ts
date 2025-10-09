@@ -2,13 +2,17 @@
  * MODELS INDEX - Configuración y relaciones
  */
 
+<<<<<<< HEAD
 import sequelize from '../config/database';
 import comment from './comment';
+=======
+import sequelize from '../database/database';
+import { Comment } from './Comment';
+import { User } from './User';
+>>>>>>> cea54241193131e4d1ece39afbf7c8ce72e7a278
 
 // NOTA: Estas importaciones darán error temporal hasta que tus compis
 // desarrollen sus modelos. Es NORMAL y esperado.
-// @ts-ignore - Importación temporal hasta que se desarrollen los modelos
-import User from './User';
 // @ts-ignore - Importación temporal hasta que se desarrollen los modelos
 import Post from './Post';
 // @ts-ignore - Importación temporal hasta que se desarrollen los modelos
@@ -25,9 +29,24 @@ import Post from './Post';
 export const setupAssociations = (): void => {
     console.log('🔗 Configurando asociaciones de modelos...');
     
-    // Estas relaciones se activarán cuando User y Post estén disponibles
-    // Por ahora las dejamos comentadas para evitar errores de runtime
+    // ============================================
+    // ASOCIACIONES ACTIVAS
+    // ============================================
 
+    // User - Comment (1:N)
+    User.hasMany(Comment, {
+        foreignKey: 'user_id',
+        as: 'comments'
+    });
+    Comment.belongsTo(User, {
+        foreignKey: 'user_id',
+        as: 'author'
+    });
+
+    // ============================================
+    // ASOCIACIONES PENDIENTES (Post no disponible aún)
+    // ============================================
+    
     /*
     // User - Post (1:N)
     User.hasMany(Post, {
@@ -47,16 +66,6 @@ export const setupAssociations = (): void => {
     Comment.belongsTo(Post, {
         foreignKey: 'post_id',
         as: 'post'
-    });
-
-    // User - Comment (1:N)
-    User.hasMany(Comment, {
-        foreignKey: 'user_id',
-        as: 'comments'
-    });
-    Comment.belongsTo(User, {
-        foreignKey: 'user_id',
-        as: 'author'
     });
 
     // User - Like (1:N) - Si existe el modelo Like
@@ -85,7 +94,9 @@ export const setupAssociations = (): void => {
         });
     }
     */
-    console.log('✅ Asociaciones preparadas (comentadas hasta modelos existentes)');
+    
+    console.log('✅ Asociaciones configuradas: User <-> Comment');
+    console.log('⏳ Pendientes: Post, Like (cuando estén disponibles)');
 };
 
 
@@ -100,7 +111,7 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
         await sequelize.authenticate();
         console.log('✅ Conexión a base de datos exitosa');
         
-        // Sincronizar todos los modelos definidos, incluyendo Comment
+        // Sincronizar todos los modelos definidos, incluyendo Comment y User
         await sequelize.sync({ force, alter: !force }); 
         
         console.log(`✅ Base de datos sincronizada ${force ? '(recreada)' : '(actualizada)'}`);
@@ -117,12 +128,19 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
 
 export {
     sequelize,
+<<<<<<< HEAD
     comment,
     // Elimina setupAssociations y syncDatabase de este bloque,
     // ya que se exportan como 'export const'.
     // User,
     // Post,
     // Like
+=======
+    Comment,
+    User,
+    // Post,    // Pendiente
+    // Like     // Pendiente
+>>>>>>> cea54241193131e4d1ece39afbf7c8ce72e7a278
 };
 
 export default sequelize;
