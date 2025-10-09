@@ -1,10 +1,55 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
-//----------IMPORTANT-------------------
-//TEMPORAL CODE FOR TESTING PURPOSE!!!!!
 
-// Placeholder for the real verifyToken middleware.
-// This will be replaced with actual JWT verification logic.
+/**
+ * Middleware para verificar que el usuario está autenticado
+ * Verifica el token JWT y añade la info del usuario al request
+ */
+export const verifyToken = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    //console.log('🔍 NODE_ENV:', process.env.NODE_ENV); // <-- Añade esto
+    //console.log('🔍 Token recibido:', req.headers.authorization); // <-- Y esto
+
+    const token = req.headers.authorization?.replace('Bearer ', '');
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token no proporcionado'
+      });
+    }
+
+    // En entorno de testing, aceptar cualquier token y autenticar como usuario 1
+    if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
+      //console.log('✅ Modo desarrollo - autenticando como usuario 1');
+      req.user = { id: 1, role: 'user' };
+      return next();
+    }
+
+    // Verificar token JWT en producción/desarrollo
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
+    // Añadir info del usuario al request
+    req.user = {
+      id: decoded.id,
+      role: decoded.role
+    };
+
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      error: 'Token inválido o expirado'
+    });
+  }
+}
+
+/*Código MaricCarmen- probablemente se borrará  
 export const verifyToken = (
   req: Request,
   res: Response,
@@ -24,3 +69,5 @@ export const verifyToken = (
   req.auth = { id: 1 };
   next();
 };
+
+*/
