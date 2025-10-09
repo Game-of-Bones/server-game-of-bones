@@ -1,66 +1,112 @@
-// import { Request, Response, NextFunction } from "express";
-// import LikeManager from "../models/LikeManager";
+import { Request, Response } from 'express';
+import { Like } from '../models/Like';
+import { Post } from '../models/Post';
 
-// // Create an instance of the manager that we will use in the controllers
-// const likeManager = new LikeManager();
+/**
+ * Obtener el número de likes de un post
+ * GET /gameofbones/posts/:postId/likes
+ */
+export const getLikesByPost = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { postId } = req.params;
 
-// /**
-//  * Gets the number of likes for a specific post.
-//  */
-// const getLikesByPostId = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     const postId = parseInt(req.params.postId, 10);
-//     const likeCount = await likeManager.findCountByPostId(postId);
+    // TODO: Verificar que el post existe cuando el modelo Post esté disponible
+    /*
+    const post = await Post.findByPk(postId);
+    if (!post) {
+      res.status(404).json({
+        success: false,
+        message: 'Post no encontrado'
+      });
+      return;
+    }
+    */
 
-//     res.status(200).json({ count: likeCount });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
+    const likeCount = await Like.count({
+      where: { post_id: postId }
+    });
 
-// /**
-//  * Adds or removes a like from a post.
-//  * If the user has already liked the post, the like is removed.
-//  * If not, it is added.
-//  */
-// const toggleLike = async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     const postId = parseInt(req.params.postId, 10);
-//     // We assume the user ID comes from the authentication middleware
-//     const userId = req.user?.id;
+    res.status(200).json({
+      success: true,
+      count: likeCount
+    });
+  } catch (error: any) {
+    console.error('Error al obtener likes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener likes del post',
+      error: error.message
+    });
+  }
+};
 
-//     // Validate that the user is authenticated
-//     if (!userId) {
-//       return res.status(401).json({ error: 'Usuario no autenticado' });
-//     }
+/**
+ * Añadir o quitar un like de un post.
+ * POST /gameofbones/posts/:postId/likes
+ * Si el usuario ya ha dado like, se elimina. Si no, se añade.
+ */
+export const toggleLike = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user?.id; // Del middleware verifyToken
 
-//     // Check if the like already exists
-//     const existingLike = await likeManager.findUserLikeForPost(userId, postId);
+    // 1. Validar que el usuario está autenticado
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado para dar like'
+      });
+      return;
+    }
 
-//     if (existingLike) {
-//       await likeManager.delete({ user_id: userId, post_id: postId });
-//       res.status(200).json({ message: "Like removed successfully" });
-//     } else {
-//       const result = await likeManager.add({ user_id: userId, post_id: postId });
-//       res.status(201).json({ insertId: result, message: "Like added successfully" });
-//     }
-//   } catch (err) {
-//     // Check if the error is a MySQL error for a non-existent foreign key
-//     if (
-//       err &&
-//       typeof err === "object" &&
-//       "code" in err &&
-//       err.code === "ER_NO_REFERENCED_ROW_2"
-//     ) {
-//       res.status(404).send("Post not found");
-//     } else {
-//       next(err);
-//     }
-//   }
-// };
+    const postIdParsed = parseInt(postId, 10);
 
-// export { getLikesByPostId, toggleLike };
+    // 2. (Opcional pero recomendado) Verificar que el post existe
+    // TODO: Descomentar cuando el modelo Post esté disponible
+    /*
+    const post = await Post.findByPk(postIdParsed);
+    if (!post) {
+      res.status(404).json({
+        success: false,
+        message: 'Post no encontrado'
+      });
+      return;
+    }
+    */
+
+    // 3. Buscar si ya existe un like de este usuario para este post
+    const existingLike = await Like.findOne({
+      where: {
+        user_id: userId,
+        post_id: postIdParsed
+      }
+    });
+
+    if (existingLike) {
+      // Si existe, eliminar el like
+      await existingLike.destroy();
+      res.status(200).json({
+        success: true,
+        message: 'Like eliminado exitosamente'
+      });
+    } else {
+      // Si no existe, crear el like
+      const newLike = await Like.create({
+        user_id: userId,
+        post_id: postIdParsed
+      });
+      res.status(201).json({
+        success: true,
+        message: 'Like añadido exitosamente',
+        data: newLike
+      });
+    }
+  } catch (error: any) {
+    console.error('Error al añadir/quitar like:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al procesar el like',
+      error: error.message
+    });
+  }
+};
