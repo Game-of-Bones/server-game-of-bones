@@ -1,103 +1,40 @@
 /**
- * MODELS INDEX - Configuración y relaciones
+ * MODELS INDEX - Re-exportación de modelos migrados
+ * * NOTA: La función setupAssociations() se elimina porque las relaciones
+ * se definen con decoradores (@HasMany, @BelongsTo) dentro de cada modelo.
  */
 
+// Importaciones para re-exportar y acceso (ya no son para definir asociaciones)
 import sequelize from '../database/database';
 import { Comment } from './Comment';
 import { User } from './User';
-
-// NOTA: Estas importaciones darán error temporal hasta que tus compis
-// desarrollen sus modelos. Es NORMAL y esperado.
-// @ts-ignore - Importación temporal hasta que se desarrollen los modelos
-import Post from './Post';
-// @ts-ignore - Importación temporal hasta que se desarrollen los modelos
-// import Like from './Like'; // Importación temporal hasta que se desarrolle el modelo
+// Importaciones pendientes:
+// import { Post } from './Post';
+// import { Like } from './Like'; 
 
 // ============================================
 // FUNCIÓN DE CONFIGURACIÓN DE RELACIONES
 // ============================================
 
-/**
- * Configura las asociaciones (relaciones) entre los modelos de Sequelize.
- * Se llama desde server.ts después de autenticar la conexión a DB.
- */
+// TODO: ESTA FUNCIÓN DEBE SER ELIMINADA CUANDO TODOS LOS MODELOS HAYAN SIDO MIGRADOS.
+// Mientras tanto, se puede mantener vacía o eliminada si las nuevas asociaciones
+// con decoradores ya están definidas en los modelos User y Comment.
+
 export const setupAssociations = (): void => {
-    console.log('🔗 Configurando asociaciones de modelos...');
-    
-    // ============================================
-    // ASOCIACIONES ACTIVAS
-    // ============================================
-
-    // User - Comment (1:N)
-    User.hasMany(Comment, {
-        foreignKey: 'user_id',
-        as: 'comments'
-    });
-    Comment.belongsTo(User, {
-        foreignKey: 'user_id',
-        as: 'author'
-    });
-
-    // ============================================
-    // ASOCIACIONES PENDIENTES (Post no disponible aún)
-    // ============================================
-    
-    /*
-    // User - Post (1:N)
-    User.hasMany(Post, {
-        foreignKey: 'user_id',
-        as: 'posts'
-    });
-    Post.belongsTo(User, {
-        foreignKey: 'user_id',
-        as: 'author'
-    });
-
-    // Post - Comment (1:N)
-    Post.hasMany(Comment, {
-        foreignKey: 'post_id',
-        as: 'comments'
-    });
-    Comment.belongsTo(Post, {
-        foreignKey: 'post_id',
-        as: 'post'
-    });
-
-    // User - Like (1:N) - Si existe el modelo Like
-    // @ts-ignore - La importación de Like puede no existir
-    if (typeof Like !== 'undefined') {
-        // @ts-ignore 
-        User.hasMany(Like, {
-            foreignKey: 'user_id',
-            as: 'likes'
-        });
-        // @ts-ignore 
-        Like.belongsTo(User, {
-            foreignKey: 'user_id',
-            as: 'user'
-        });
-
-        // @ts-ignore 
-        Post.hasMany(Like, {
-            foreignKey: 'post_id',
-            as: 'likes'
-        });
-        // @ts-ignore 
-        Like.belongsTo(Post, {
-            foreignKey: 'post_id',
-            as: 'post'
-        });
-    }
-    */
-    
-    console.log('✅ Asociaciones configuradas: User <-> Comment');
-    console.log('⏳ Pendientes: Post, Like (cuando estén disponibles)');
+    console.log('🔗 Asociaciones ahora definidas con decoradores en los modelos.');
+    // Si necesitas garantizar que todas las clases se carguen (aunque database.ts ya lo hace):
+    // const models = sequelize.modelManager.all; 
+    // console.log(`Modelos cargados: ${Object.keys(models).join(', ')}`);
+    console.log('✅ Configuración de asociaciones (obsoleta) omitida.');
 };
 
 
 // ============================================
-// SINCRONIZAR BASE DE DATOS (Función auxiliar)
+// SINCRONIZAR BASE DE DATOS (Se mantiene, si es usada)
 // ============================================
+// NOTA: Si esta función solo se usaba con la instancia 'sequelize' antigua,
+// seguirá funcionando ya que la nueva instancia de sequelize-typescript
+// mantiene la función .sync() y ya conoce los modelos.
 
 export const syncDatabase = async (force: boolean = false): Promise<void> => {
     try {
@@ -106,7 +43,7 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
         await sequelize.authenticate();
         console.log('✅ Conexión a base de datos exitosa');
         
-        // Sincronizar todos los modelos definidos, incluyendo Comment y User
+        // sequelize-typescript usa .sync() y automáticamente incluye los modelos cargados
         await sequelize.sync({ force, alter: !force }); 
         
         console.log(`✅ Base de datos sincronizada ${force ? '(recreada)' : '(actualizada)'}`);
@@ -123,10 +60,10 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
 
 export {
     sequelize,
-    Comment,
-    User,
-    // Post,    // Pendiente
-    // Like     // Pendiente
+    Comment, // Solo si los necesitas acceder globalmente
+    User,    // Solo si los necesitas acceder globalmente
+    // Post,  // Migrar y añadir aquí
+    // Like   // Migrar y añadir aquí
 };
 
 export default sequelize;

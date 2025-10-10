@@ -48,9 +48,13 @@
 
   {
     "compilerOptions": {
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
       "target": "ES2020",
       "module": "commonjs",
-      "lib": ["ES2020"],
+      "lib": [
+        "ES2020"
+      ],
       "outDir": "./dist",
       "rootDir": "./src",
       "strict": true,
@@ -62,7 +66,10 @@
       "declaration": true,
       "declarationMap": true,
       "sourceMap": true,
-      "typeRoots": ["./node_modules/@types", "./src/types"]
+      "typeRoots": [
+        "./node_modules/@types",
+        "./src/types"
+      ]
     },
     "include": [
       "src/**/*"
