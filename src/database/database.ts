@@ -1,21 +1,13 @@
-/**
- * CONFIGURACIÓN DE SEQUELIZE
- * 
- * Configura la conexión a la base de datos MySQL
- * usando variables de entorno
- */
-
-import { Sequelize } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
-// Detectar si estamos en modo test
 const isTest = process.env.NODE_ENV === 'test';
 
-// Configuración según el entorno
 const config = {
-  database: isTest 
+  database: isTest
     ? (process.env.DB_TEST_NAME || 'game_of_bones_app_test')
     : (process.env.DB_NAME || 'game_of_bones_app'),
   username: isTest
@@ -39,22 +31,26 @@ const sequelize = new Sequelize({
   host: config.host,
   port: config.port,
   dialect: 'mysql',
-  
-  // Configuración de pool de conexiones
+
+  // 👇 Cargar SOLO los archivos de modelos, no el index.ts
+  models: [
+    path.join(__dirname, '../models/User.ts'),
+    path.join(__dirname, '../models/GobModelPost.ts'),
+    path.join(__dirname, '../models/Comment.ts'),
+    path.join(__dirname, '../models/Like.ts'),
+  ],
+
   pool: {
     max: isTest ? 5 : 10,
     min: 0,
     acquire: 30000,
     idle: 10000
   },
-  
-  // Logging (desactiva en test y producción)
+
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
-  
-  // Timezone
+
   timezone: '+00:00',
-  
-  // Define opciones por defecto para todos los modelos
+
   define: {
     timestamps: true,
     underscored: true,
