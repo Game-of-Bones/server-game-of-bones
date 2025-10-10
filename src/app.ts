@@ -3,7 +3,7 @@
  * Configuración principal de la aplicación
  */
 
-import express, { Application } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import router from './router';
@@ -20,7 +20,7 @@ const SERVER_BANNER = `
 ║                                               ║
 ║           🦴 GAME OF BONES API 🦴             ║
 ║                                               ║
-║      Server running on http://localhost:${PORT}  ║
+║       Server running on http://localhost:${PORT} ║
 ║                                               ║
 ╚═══════════════════════════════════════════════╝
 `;
@@ -40,38 +40,50 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+// ============================================
+// LÓGICA DEL BANNER DE LA API
+// ============================================
+
+// Función reutilizable para el banner de la API (response body)
+const gameOfBonesAPIBanner = (req: Request, res: Response) => {
+    res.json({
+        success: true,
+        message: 'Game of Bones API',
+        version: '1.0.0',
+        description: 'API REST para Blog de Paleontología',
+        endpoints: {
+            health: '/health',
+            auth: '/gameofbones/auth',
+            users: '/gameofbones/users',
+            posts: '/gameofbones/posts',
+            comments: '/gameofbones/comments',
+            likes: '/gameofbones/likes'
+        },
+        documentation: 'https://github.com/Game-of-Bones/server-game-of-bones'
+    });
+};
+
+
 // ============================================
 // RUTAS
 // ============================================
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    message: '¡Bienvenido a la Game of Bones API!',
-    environment: process.env.NODE_ENV || 'development'
-  });
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        message: '¡Bienvenido a la Game of Bones API!',
+        environment: process.env.NODE_ENV || 'development'
+    });
 });
 
-// Ruta raíz de la API
-app.get('/gameofbones', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Game of Bones API',
-    version: '1.0.0',
-    description: 'API REST para Blog de Paleontología',
-    endpoints: {
-      health: '/health',
-      auth: '/gameofbones/auth',
-      users: '/gameofbones/users',
-      posts: '/gameofbones/posts',
-      comments: '/gameofbones/comments',
-      likes: '/gameofbones/likes'
-    },
-    documentation: 'https://github.com/Game-of-Bones/server-game-of-bones'
-  });
-});
+// ⭐ MODIFICACIÓN: Ruta raíz ("/") para que devuelva el banner de la API.
+app.get('/', gameOfBonesAPIBanner);
+
+// Ruta raíz de la API ("/gameofbones") - Ahora usa la función reutilizable.
+app.get('/gameofbones', gameOfBonesAPIBanner);
 
 // Todas las rutas de la API
 app.use('/gameofbones', router);
@@ -82,19 +94,19 @@ app.use('/gameofbones', router);
 
 // Ruta 404 - debe ir ANTES del errorHandler
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Ruta no encontrada',
-    path: req.path,
-    availableEndpoints: {
-      health: '/health',
-      api: '/gameofbones',
-      users: '/gameofbones/users',
-      posts: '/gameofbones/posts',
-      comments: '/gameofbones/comments',
-      likes: '/gameofbones/likes'
-    }
-  });
+    res.status(404).json({
+        success: false,
+        message: 'Ruta no encontrada',
+        path: req.path,
+        availableEndpoints: {
+            health: '/health',
+            api: '/gameofbones',
+            users: '/gameofbones/users',
+            posts: '/gameofbones/posts',
+            comments: '/gameofbones/comments',
+            likes: '/gameofbones/likes'
+        }
+    });
 });
 
 // ✅ Middleware de manejo de errores - DEBE IR AL FINAL
