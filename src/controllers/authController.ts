@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User';
-import { CreateUserDTO, LoginDTO } from '../models/User';
+import { User, CreateUserDTO, LoginDTO } from '../models/User';
 
 /**
  * Registrar nuevo usuario
