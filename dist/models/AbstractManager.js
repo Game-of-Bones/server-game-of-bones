@@ -1,3 +1,4 @@
+"use strict";
 /*import database from "../config/client";
 
 // Abstract class for all managers
@@ -14,3 +15,4 @@ export default abstract class AbstractManager {
 }
 
 */
+//# sourceMappingURL=AbstractManager.js.map

@@ -11,9 +11,11 @@
     "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage",
+    "db:init": "ts-node src/scripts/init-db.ts",
     "db:fresh": "ts-node -e \"require('./src/models').syncDatabase(true).then(() => process.exit(0))\"",
     "seed": "ts-node src/server/script/runAllSeeders.ts",
-    "init:test": "ts-node src/database/initTest.ts",
+    "init:test": "cross-env NODE_ENV=test ts-node src/database/initTest.ts",
+    "setup": "npm run db:init && npm run seed",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },

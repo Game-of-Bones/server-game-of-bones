@@ -1,36 +1,37 @@
+// src/models/index.ts
 /**
- * MODELS INDEX - Re-exportación de modelos migrados
- * * NOTA: La función setupAssociations() se elimina porque las relaciones
- * se definen con decoradores (@HasMany, @BelongsTo) dentro de cada modelo.
+ * MODELS INDEX - Sequelize-TypeScript
+ *
+ * Con sequelize-typescript, los modelos se cargan automáticamente
+ * desde database.ts usando la opción 'models: [path]'
+ *
+ * Las relaciones están definidas con decoradores en cada modelo.
+ * NO es necesario llamar a setupAssociations()
  */
 
 // Importaciones para re-exportar y acceso (ya no son para definir asociaciones)
 import sequelize from '../database/database';
-import { Comment } from './Comment';
 import { User } from './User';
-// Importaciones pendientes:
-// import { Post } from './Post';
-// import { Like } from './Like'; 
+import Fossil from './GobModelPost';
+import { Comment } from './Comment';
+import { Like } from './Like';
 
 // ============================================
-// FUNCIÓN DE CONFIGURACIÓN DE RELACIONES
+// FUNCIÓN DE LOGGING (OPCIONAL)
 // ============================================
 
-// TODO: ESTA FUNCIÓN DEBE SER ELIMINADA CUANDO TODOS LOS MODELOS HAYAN SIDO MIGRADOS.
-// Mientras tanto, se puede mantener vacía o eliminada si las nuevas asociaciones
-// con decoradores ya están definidas en los modelos User y Comment.
-
+/**
+ * Con sequelize-typescript, las asociaciones ya están definidas
+ * en cada modelo con decoradores (@HasMany, @BelongsTo, etc.)
+ * Esta función solo muestra información para debug.
+ */
 export const setupAssociations = (): void => {
-    console.log('🔗 Asociaciones ahora definidas con decoradores en los modelos.');
-    // Si necesitas garantizar que todas las clases se carguen (aunque database.ts ya lo hace):
-    // const models = sequelize.modelManager.all; 
-    // console.log(`Modelos cargados: ${Object.keys(models).join(', ')}`);
-    console.log('✅ Configuración de asociaciones (obsoleta) omitida.');
+    console.log('🔗 Modelos con decoradores cargados automáticamente');
+    // ⚠️ NO hacemos nada aquí, solo logging
 };
 
-
 // ============================================
-// SINCRONIZAR BASE DE DATOS (Se mantiene, si es usada)
+// SINCRONIZAR BASE DE DATOS
 // ============================================
 // NOTA: Si esta función solo se usaba con la instancia 'sequelize' antigua,
 // seguirá funcionando ya que la nueva instancia de sequelize-typescript
@@ -39,15 +40,18 @@ export const setupAssociations = (): void => {
 export const syncDatabase = async (force: boolean = false): Promise<void> => {
     try {
         console.log('🔄 Sincronizando base de datos...');
-        
+
         await sequelize.authenticate();
         console.log('✅ Conexión a base de datos exitosa');
-        
-        // sequelize-typescript usa .sync() y automáticamente incluye los modelos cargados
-        await sequelize.sync({ force, alter: !force }); 
-        
+
+        // ⚠️ NO llamamos setupAssociations() porque no hace nada
+        // Los modelos ya están registrados automáticamente
+
+        // Sincronizar todos los modelos
+        await sequelize.sync({ force, alter: !force });
+
         console.log(`✅ Base de datos sincronizada ${force ? '(recreada)' : '(actualizada)'}`);
-        
+
     } catch (error) {
         console.error('❌ Error al sincronizar base de datos:', error);
         throw error;
@@ -60,10 +64,13 @@ export const syncDatabase = async (force: boolean = false): Promise<void> => {
 
 export {
     sequelize,
-    Comment, // Solo si los necesitas acceder globalmente
-    User,    // Solo si los necesitas acceder globalmente
-    // Post,  // Migrar y añadir aquí
-    // Like   // Migrar y añadir aquí
+    User,
+    Fossil,
+    Comment,
+    Like
 };
+
+// Alias para mantener compatibilidad
+export const Post = Fossil;
 
 export default sequelize;
