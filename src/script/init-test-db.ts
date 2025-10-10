@@ -1,3 +1,17 @@
+// src/scripts/init-test-db.ts
+/**
+ * SCRIPT DE INICIALIZACIÓN DE BASE DE DATOS DE TEST
+ * 
+ * Este script:
+ * 1. Elimina la BD de test si existe
+ * 2. Crea la BD de test desde cero
+ * 3. Sincroniza los modelos
+ * 4. Ejecuta los seeders de test
+ * 
+ * Uso:
+ *   npm run db:init:test
+ */
+
 import { config } from 'dotenv';
 import { Sequelize } from 'sequelize';
 
@@ -39,16 +53,13 @@ const initTestDatabase = async () => {
     // Cerrar conexión root
     await rootConnection.close();
 
-     // ============================================
+    // ============================================
     // Conectar a la BD de test y crear tablas
     // ============================================
     console.log('\n📊 Sincronizando modelos...');
 
     // Importar sequelize configurado (ya detectará NODE_ENV=test)
-    const sequelize = (await import('./database')).default;
-
-    // AHORA NO ES NECESARIO IMPORTAR TODOS LOS MODELOS
-    // await import('../models');
+    const sequelize = (await import('../database/database')).default;
 
     // Sincronizar modelos (crear tablas)
     await sequelize.sync({ force: true });
@@ -59,7 +70,7 @@ const initTestDatabase = async () => {
     // ============================================
     console.log('\n🌱 Ejecutando seeders...');
     try {
-      const { default: runAllSeeders } = await import('../server/script/runAllSeeders');
+      const { default: runAllSeeders } = await import('../script/runAllSeeders');
       await runAllSeeders();
       console.log('✅ Seeders ejecutados correctamente');
     } catch (error: any) {
@@ -77,9 +88,8 @@ const initTestDatabase = async () => {
     console.log('\n🎉 Base de datos de test inicializada correctamente');
     console.log(`📍 Nombre de la base de datos: ${dbName}`);
     console.log('\n💡 Próximos pasos:');
-    console.log('  1. npm run dev      - Levantar API en modo desarrollo');
-    console.log('  2. Usar Postman     - Probar endpoints manualmente');
-    console.log('  3. npm test         - Ejecutar tests automáticos\n');
+    console.log('  1. npm test         - Ejecutar tests automáticos');
+    console.log('  2. npm run dev:test - Levantar servidor con BD de test\n');
 
   } catch (error) {
     console.error('❌ Error al inicializar la base de datos de test:', error);

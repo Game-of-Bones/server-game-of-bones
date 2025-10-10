@@ -1,6 +1,7 @@
 // src/middleware/auth.ts
 /**
  * MIDDLEWARE DE AUTENTICACIÓN Y AUTORIZACIÓN
+ * ✅ CORREGIDO: Type casting para role
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -11,7 +12,7 @@ import jwt from 'jsonwebtoken';
  */
 interface JwtPayload {
   id: number;
-  role: string;
+  role: 'admin' | 'user'; // ✅ Tipo estricto
 }
 
 /**
@@ -52,10 +53,19 @@ export const verifyToken = (
       process.env.JWT_SECRET || 'secret'
     ) as JwtPayload;
 
+    // ✅ CORRECCIÓN: Validar que el role es válido antes de asignarlo
+    if (decoded.role !== 'admin' && decoded.role !== 'user') {
+      res.status(401).json({
+        success: false,
+        message: 'Rol de usuario inválido'
+      });
+      return;
+    }
+
     // Agregar información del usuario a la request
     req.user = {
       id: decoded.id,
-      role: decoded.role
+      role: decoded.role // ✅ Ahora TypeScript sabe que es 'admin' | 'user'
     };
 
     next();

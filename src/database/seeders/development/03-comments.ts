@@ -89,9 +89,9 @@
  * SEEDER DE COMENTARIOS
  */
 
-import { Comment } from '../../models/Comment';
-import { User } from '../../models/User';
-import Fossil from '../../models/GobModelPost'; // ✅ Ya disponible
+import { Comment } from '../../../models/Comment';
+import { User } from '../../../models/User';
+import Fossil from '../../../models/GobModelPost'; // ✅ Ya disponible
 
 export const seedComments = async (): Promise<void> => {
   try {

@@ -1,6 +1,6 @@
 // src/database/seeders/01-users.ts
 import bcrypt from 'bcrypt';
-import { User } from '../../models/User';
+import { User } from '../../../models/User';
 
 /**
  * Seeder para crear usuarios de prueba

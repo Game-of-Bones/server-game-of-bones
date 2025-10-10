@@ -9,7 +9,7 @@ dotenv.config();
 
 import app, { logServerBanner } from './app';
 import sequelize, { testConnection } from './database/database';
-import './models'; // ✅ Importar modelos para que se registren automáticamente
+import './server'; // ✅ Importar modelos para que se registren automáticamente
 
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';

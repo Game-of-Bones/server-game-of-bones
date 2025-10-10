@@ -1,24 +1,26 @@
 // src/models/Like.ts
 /**
- * MODELO LIKE - SEQUELIZE-TYPESCRIPT CON DECORADORES
+ * MODELO LIKE - Sequelize-TypeScript con Decoradores
+ * ✅ CORREGIDO: user_id y post_id ahora son BIGINT.UNSIGNED
  */
 
+import 'reflect-metadata';
 import {
   Table,
   Column,
   Model,
+  PrimaryKey,
+  AutoIncrement,
+  AllowNull,
   DataType,
-  CreatedAt,
   ForeignKey,
   BelongsTo,
-  AllowNull
+  Comment as SqComment,
+  CreatedAt
 } from 'sequelize-typescript';
 
-// ⚠️ NO IMPORTAMOS los modelos relacionados aquí
-// Las relaciones se definen con lazy loading
-
 // ============================================
-// INTERFACES
+// TIPOS E INTERFACES
 // ============================================
 
 export interface LikeAttributes {
@@ -28,15 +30,22 @@ export interface LikeAttributes {
   created_at?: Date;
 }
 
+export interface LikeCreationAttributes {
+  user_id: number;
+  post_id: number;
+}
+
 // ============================================
 // MODELO LIKE CON DECORADORES
 // ============================================
 
 @Table({
   tableName: 'likes',
+  modelName: 'Like',
   timestamps: true,
-  updatedAt: false, // ⚠️ IMPORTANTE: Likes no tienen updated_at
   underscored: true,
+  createdAt: 'created_at',
+  updatedAt: false, // ⚠️ IMPORTANTE: Likes no tienen updated_at
   charset: 'utf8mb4',
   collate: 'utf8mb4_unicode_ci',
   indexes: [
@@ -55,35 +64,29 @@ export interface LikeAttributes {
     }
   ]
 })
-export class Like extends Model<LikeAttributes> {
+export class Like extends Model<LikeAttributes, LikeCreationAttributes> {
 
   // ============================================
   // COLUMNAS
   // ============================================
 
-  @Column({
-    type: DataType.BIGINT.UNSIGNED,
-    primaryKey: true,
-    autoIncrement: true,
-    comment: 'ID único del like'
-  })
-  declare id: number;
+  @SqComment('Identificador único del like')
+  @PrimaryKey
+  @AutoIncrement
+  @Column(DataType.BIGINT.UNSIGNED) // ✅ CORREGIDO
+  public id!: number;
 
+  @SqComment('ID del usuario que dio like')
+  @AllowNull(false)
   @ForeignKey(() => require('./User').User)
-  @AllowNull(false)
-  @Column({
-    type: DataType.BIGINT.UNSIGNED,
-    comment: 'ID del usuario que dio like'
-  })
-  declare user_id: number;
+  @Column(DataType.BIGINT.UNSIGNED) // ✅ CORREGIDO: Era INTEGER.UNSIGNED
+  public user_id!: number;
 
-  @ForeignKey(() => require('./GobModelPost').default)
+  @SqComment('ID del post al que se le dio like')
   @AllowNull(false)
-  @Column({
-    type: DataType.BIGINT.UNSIGNED,
-    comment: 'ID del post al que se le dio like'
-  })
-  declare post_id: number;
+  @ForeignKey(() => require('./GobModelPost').default)
+  @Column(DataType.BIGINT.UNSIGNED) // ✅ CORREGIDO: Era INTEGER.UNSIGNED
+  public post_id!: number;
 
   // ============================================
   // TIMESTAMPS
@@ -94,7 +97,7 @@ export class Like extends Model<LikeAttributes> {
     type: DataType.DATE,
     field: 'created_at'
   })
-  declare created_at: Date;
+  public readonly created_at!: Date;
 
   // ⚠️ NO HAY updated_at en likes
 
@@ -102,19 +105,17 @@ export class Like extends Model<LikeAttributes> {
   // RELACIONES (LAZY LOADING)
   // ============================================
 
-  // Cada like pertenece a un usuario
   @BelongsTo(() => require('./User').User, {
     foreignKey: 'user_id',
     as: 'user'
   })
-  declare user?: any;
+  public user?: any;
 
-  // Cada like pertenece a un post
   @BelongsTo(() => require('./GobModelPost').default, {
     foreignKey: 'post_id',
     as: 'post'
   })
-  declare post?: any;
+  public post?: any;
 }
 
 export default Like;

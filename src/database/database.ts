@@ -1,6 +1,13 @@
+// src/database/database.ts
 import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
 import path from 'path';
+
+// Importar modelos explícitamente
+import { User } from '../models/User';
+import Fossil from '../models/GobModelPost';
+import { Comment } from '../models/Comment';
+import { Like } from '../models/Like';
 
 dotenv.config();
 
@@ -24,7 +31,10 @@ const config = {
     : parseInt(process.env.DB_PORT || '3306'),
 };
 
-// Crear una instancia de Sequelize de sequelize-typescript
+// ============================================
+// INSTANCIA DE SEQUELIZE
+// ============================================
+
 const sequelize = new Sequelize({
   database: config.database,
   username: config.username,
@@ -33,7 +43,9 @@ const sequelize = new Sequelize({
   port: config.port,
   dialect: 'mysql',
   
-  // Configuración de pool de conexiones
+  // ✅ Cargar modelos explícitamente (NO usar models: [path])
+  models: [User, Fossil, Comment, Like],
+  
   pool: {
     max: isTest ? 5 : 10,
     min: 0,
@@ -41,29 +53,61 @@ const sequelize = new Sequelize({
     idle: 10000
   },
   
-  // Logging (desactiva en test y producción)
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
-  
-  // Timezone
   timezone: '+00:00',
   
-  // Define opciones por defecto para todos los modelos
   define: {
     timestamps: true,
     underscored: true,
-    freezeTableName: true
+    freezeTableName: true,
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci'
   }
 });
 
+// ============================================
+// FUNCIÓN DE TEST DE CONEXIÓN
+// ============================================
+
 export const testConnection = async (): Promise<boolean> => {
-    try {
-        await sequelize.authenticate();
-        console.log(`✅ Conexión exitosa a: ${config.database}`);
-        return true;
-    } catch (error) {
-        console.error('❌ Error de conexión:', error);
-        return false;
+  try {
+    await sequelize.authenticate();
+    console.log(`✅ Conexión exitosa a: ${config.database}`);
+    console.log(`   Host: ${config.host}:${config.port}`);
+    console.log(`   Entorno: ${process.env.NODE_ENV || 'development'}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error de conexión:', error);
+    return false;
+  }
+};
+
+// ============================================
+// FUNCIÓN DE SINCRONIZACIÓN
+// ============================================
+
+export const syncDatabase = async (options?: { force?: boolean; alter?: boolean }): Promise<void> => {
+  try {
+    console.log('\n🔄 Sincronizando base de datos...');
+    
+    const syncOptions = {
+      force: options?.force || false,
+      alter: options?.alter || false
+    };
+
+    await sequelize.sync(syncOptions);
+    
+    if (syncOptions.force) {
+      console.log('✅ Base de datos recreada (force: true)');
+    } else if (syncOptions.alter) {
+      console.log('✅ Base de datos actualizada (alter: true)');
+    } else {
+      console.log('✅ Base de datos sincronizada');
     }
+  } catch (error) {
+    console.error('❌ Error al sincronizar base de datos:', error);
+    throw error;
+  }
 };
 
 export default sequelize;
