@@ -5,11 +5,21 @@
  * Ejecutar: npm run seed
  */
 
+import 'reflect-metadata';
 import dotenv from 'dotenv';
+
+// ✅ CRÍTICO: Importar sequelize PRIMERO
 import sequelize from '../../database/database';
-import { setupAssociations } from '../../models';
+
+// ✅ IMPORTANTE: Importar TODOS los modelos para que se registren
+import { User } from '../../models/User';
+import Fossil from '../../models/GobModelPost';
+import { Comment } from '../../models/Comment';
+import { Like } from '../../models/Like';
+
+// ✅ Luego importar los seeders
 import { seedUsers } from '../../database/seeders/01-users';
-// import { seedFossils } from '../../database/seeders/02-fossils'; // Descomentar cuando exista
+import { seedFossils } from '../../database/seeders/02-fossils';
 import { seedComments } from '../../database/seeders/03-comments';
 
 dotenv.config();
@@ -25,14 +35,12 @@ const runAllSeeders = async (): Promise<void> => {
     await sequelize.authenticate();
     console.log('✅ Conexión establecida\n');
 
-    // 2. Configurar asociaciones
-    console.log('🔗 Configurando relaciones entre modelos...');
-    setupAssociations();
-    console.log('✅ Relaciones configuradas\n');
+    // 2. Los modelos ya están cargados automáticamente
+    console.log('🔗 Modelos cargados automáticamente vía decoradores\n');
 
     // 3. Sincronizar modelos (⚠️ alter: true para no perder datos)
     console.log('🔄 Sincronizando modelos con la base de datos...');
-    await sequelize.sync({ alter: true }); // Usar alter en lugar de force
+    await sequelize.sync({ alter: true });
     console.log('✅ Modelos sincronizados\n');
 
     // 4. Ejecutar seeders en orden
@@ -40,24 +48,39 @@ const runAllSeeders = async (): Promise<void> => {
 
     // ORDEN IMPORTANTE:
     // 1. Users (no depende de nadie)
+    console.log('   📝 1/3: Usuarios...');
     await seedUsers();
     console.log('');
 
     // 2. Fossils/Posts (depende de Users)
-    // await seedFossils(); // Descomentar cuando tu compañera lo cree
-    // console.log('');
+    console.log('   🦴 2/3: Fósiles...');
+    await seedFossils();
+    console.log('');
 
     // 3. Comments (depende de Users y Posts)
-    // await seedComments(); // Comentar hasta que Posts exista
-    // console.log('');
+    console.log('   💬 3/3: Comentarios...');
+    await seedComments();
+    console.log('');
 
     console.log('========================================');
     console.log('🎉 SEEDERS COMPLETADOS EXITOSAMENTE!');
     console.log('========================================\n');
 
-    console.log('📝 Credenciales de prueba:');
+    console.log('🔐 Credenciales de prueba:');
     console.log('   👑 Admin: admin@gameofbones.com / admin123');
     console.log('   👤 User:  maria@example.com / password123\n');
+
+    console.log('📚 Datos creados:');
+    try {
+      const userCount = await sequelize.models.User.count();
+      const fossilCount = await sequelize.models.Fossil.count();
+      const commentCount = await sequelize.models.Comment.count();
+      console.log(`   👥 Usuarios: ${userCount}`);
+      console.log(`   🦴 Fósiles: ${fossilCount}`);
+      console.log(`   💬 Comentarios: ${commentCount}\n`);
+    } catch (e) {
+      console.log('   (No se pudo contar los registros)\n');
+    }
 
     console.log('💡 Próximos pasos:');
     console.log('   1. npm run dev     - Iniciar servidor');

@@ -11,11 +11,22 @@ import {
   CreatedAt,
   ForeignKey,
   BelongsTo,
-  AllowNull,
-  Unique
+  AllowNull
 } from 'sequelize-typescript';
-import { User } from './User';
-import Fossil from './GobModelPost';
+
+// ⚠️ NO IMPORTAMOS los modelos relacionados aquí
+// Las relaciones se definen con lazy loading
+
+// ============================================
+// INTERFACES
+// ============================================
+
+export interface LikeAttributes {
+  id: number;
+  user_id: number;
+  post_id: number;
+  created_at?: Date;
+}
 
 // ============================================
 // MODELO LIKE CON DECORADORES
@@ -44,7 +55,7 @@ import Fossil from './GobModelPost';
     }
   ]
 })
-export class Like extends Model {
+export class Like extends Model<LikeAttributes> {
 
   // ============================================
   // COLUMNAS
@@ -58,7 +69,7 @@ export class Like extends Model {
   })
   declare id: number;
 
-  @ForeignKey(() => User)
+  @ForeignKey(() => require('./User').User)
   @AllowNull(false)
   @Column({
     type: DataType.BIGINT.UNSIGNED,
@@ -66,7 +77,7 @@ export class Like extends Model {
   })
   declare user_id: number;
 
-  @ForeignKey(() => Fossil)
+  @ForeignKey(() => require('./GobModelPost').default)
   @AllowNull(false)
   @Column({
     type: DataType.BIGINT.UNSIGNED,
@@ -88,22 +99,22 @@ export class Like extends Model {
   // ⚠️ NO HAY updated_at en likes
 
   // ============================================
-  // RELACIONES
+  // RELACIONES (LAZY LOADING)
   // ============================================
 
   // Cada like pertenece a un usuario
-  @BelongsTo(() => User, {
+  @BelongsTo(() => require('./User').User, {
     foreignKey: 'user_id',
     as: 'user'
   })
-  declare user?: User;
+  declare user?: any;
 
   // Cada like pertenece a un post
-  @BelongsTo(() => Fossil, {
+  @BelongsTo(() => require('./GobModelPost').default, {
     foreignKey: 'post_id',
     as: 'post'
   })
-  declare post?: Fossil;
+  declare post?: any;
 }
 
 export default Like;

@@ -3,6 +3,7 @@
  * MODELO USER - SEQUELIZE-TYPESCRIPT CON DECORADORES
  */
 
+import 'reflect-metadata';
 import {
   Table,
   Column,
@@ -16,15 +17,33 @@ import {
   AllowNull,
   Default,
   Length,
-  IsEmail
+  IsEmail,
+  AutoIncrement,
+  PrimaryKey
 } from 'sequelize-typescript';
-import Fossil from './GobModelPost';
-import { Comment } from './Comment';
-import { Like } from './Like';
 
 // ============================================
 // INTERFACES Y TIPOS
 // ============================================
+
+export interface UserAttributes {
+  id: number;
+  username: string;
+  email: string;
+  password_hash: string;
+  role: 'admin' | 'user';
+  created_at?: Date;
+  updated_at?: Date;
+  deleted_at?: Date | null;
+}
+
+// ✅ Tipo para creación: id, created_at, updated_at, deleted_at son opcionales
+export interface UserCreationAttributes {
+  username: string;
+  email: string;
+  password_hash: string;
+  role?: 'admin' | 'user';
+}
 
 export interface CreateUserDTO {
   username: string;
@@ -58,7 +77,7 @@ export interface AuthResponse {
 @Table({
   tableName: 'users',
   timestamps: true,
-  paranoid: true, // Soft delete
+  paranoid: true,
   underscored: true,
   charset: 'utf8mb4',
   collate: 'utf8mb4_unicode_ci',
@@ -79,18 +98,15 @@ export interface AuthResponse {
     }
   ]
 })
-export class User extends Model {
+export class User extends Model<UserAttributes, UserCreationAttributes> {
 
   // ============================================
   // COLUMNAS
   // ============================================
 
-  @Column({
-    type: DataType.BIGINT.UNSIGNED,
-    primaryKey: true,
-    autoIncrement: true,
-    comment: 'ID único del usuario'
-  })
+  @PrimaryKey
+  @AutoIncrement
+  @Column(DataType.BIGINT.UNSIGNED)
   declare id: number;
 
   @Unique({
@@ -99,10 +115,7 @@ export class User extends Model {
   })
   @Length({ min: 3, max: 50, msg: 'Username debe tener entre 3 y 50 caracteres' })
   @AllowNull(false)
-  @Column({
-    type: DataType.STRING(50),
-    comment: 'Nombre de usuario único'
-  })
+  @Column(DataType.STRING(50))
   declare username: string;
 
   @Unique({
@@ -111,25 +124,16 @@ export class User extends Model {
   })
   @IsEmail
   @AllowNull(false)
-  @Column({
-    type: DataType.STRING(100),
-    comment: 'Email del usuario'
-  })
+  @Column(DataType.STRING(100))
   declare email: string;
 
   @AllowNull(false)
-  @Column({
-    type: DataType.STRING(255),
-    comment: 'Contraseña hasheada con bcrypt'
-  })
+  @Column(DataType.STRING(255))
   declare password_hash: string;
 
   @Default('user')
   @AllowNull(false)
-  @Column({
-    type: DataType.ENUM('admin', 'user'),
-    comment: 'Rol del usuario'
-  })
+  @Column(DataType.ENUM('admin', 'user'))
   declare role: 'admin' | 'user';
 
   // ============================================
@@ -158,37 +162,31 @@ export class User extends Model {
   declare deleted_at: Date | null;
 
   // ============================================
-  // RELACIONES
+  // RELACIONES (LAZY LOADING)
   // ============================================
 
-  // Un usuario puede tener muchos posts
-  @HasMany(() => Fossil, {
+  @HasMany(() => require('./GobModelPost').default, {
     foreignKey: 'author_id',
     as: 'posts'
   })
-  declare posts?: Fossil[];
+  declare posts?: any[];
 
-  // Un usuario puede tener muchos comentarios
-  @HasMany(() => Comment, {
+  @HasMany(() => require('./Comment').Comment, {
     foreignKey: 'user_id',
     as: 'comments'
   })
-  declare comments?: Comment[];
+  declare comments?: any[];
 
-  // Un usuario puede tener muchos likes
-  @HasMany(() => Like, {
+  @HasMany(() => require('./Like').Like, {
     foreignKey: 'user_id',
     as: 'likes'
   })
-  declare likes?: Like[];
+  declare likes?: any[];
 
   // ============================================
-  // MÉTODOS DE INSTANCIA (OPCIONAL)
+  // MÉTODOS DE INSTANCIA
   // ============================================
 
-  /**
-   * Devuelve el usuario sin el password_hash
-   */
   toSafeObject(): UserResponse {
     return {
       id: this.id,

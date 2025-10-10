@@ -43,12 +43,12 @@ const initTestDatabase = async () => {
     // Conectar a la BD de test y crear tablas
     // ============================================
     console.log('\n📊 Sincronizando modelos...');
-    
+
     // Importar sequelize configurado (ya detectará NODE_ENV=test)
     const sequelize = (await import('./database')).default;
-    
+
     // AHORA NO ES NECESARIO IMPORTAR TODOS LOS MODELOS
-    // await import('../models'); 
+    // await import('../models');
 
     // Sincronizar modelos (crear tablas)
     await sequelize.sync({ force: true });

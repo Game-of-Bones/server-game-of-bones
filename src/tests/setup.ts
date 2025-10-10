@@ -1,16 +1,16 @@
 /**
- * CONFIGURACIÓN DE TESTS
+ * CONFIGURACIÓN DE TESTS - SEQUELIZE-TYPESCRIPT
  *
- * Inicializa la base de datos de test y configura el entorno
+ * Inicializa la base de datos de test
  */
 
 import { config } from 'dotenv';
 import sequelize from '../database/database';
 
-// ✅ Importar todos los modelos para configurar asociaciones
+// ✅ Importar todos los modelos para que se registren
 import { User } from '../models/User';
 import { Comment } from '../models/Comment';
-import Fossil from '../models/GobModelPost'; // Post/Fossil
+import Fossil from '../models/GobModelPost';
 import { Like } from '../models/Like';
 
 // Cargar variables de entorno
@@ -20,82 +20,9 @@ config();
 process.env.NODE_ENV = 'test';
 
 /**
- * Configurar asociaciones entre modelos
- * Esta función se ejecuta antes de los tests para establecer relaciones
+ * Con sequelize-typescript, las asociaciones ya están definidas
+ * en los decoradores de cada modelo. No necesitamos setupAssociations.
  */
-export const setupAssociations = (): void => {
-  console.log('🔗 Configurando asociaciones de modelos...');
-
-  // ============================================
-  // ASOCIACIONES: User <-> Fossil (Post)
-  // ============================================
-  User.hasMany(Fossil, {
-    foreignKey: 'author_id',
-    as: 'posts'
-  });
-
-  Fossil.belongsTo(User, {
-    foreignKey: 'author_id',
-    as: 'author'
-  });
-
-  // ============================================
-  // ASOCIACIONES: User <-> Comment
-  // ============================================
-  User.hasMany(Comment, {
-    foreignKey: 'user_id',
-    as: 'comments'
-  });
-
-  Comment.belongsTo(User, {
-    foreignKey: 'user_id',
-    as: 'author'
-  });
-
-  // ============================================
-  // ASOCIACIONES: Fossil (Post) <-> Comment
-  // ============================================
-  Fossil.hasMany(Comment, {
-    foreignKey: 'post_id',
-    as: 'comments'
-  });
-
-  Comment.belongsTo(Fossil, {
-    foreignKey: 'post_id',
-    as: 'post'
-  });
-
-  // ============================================
-  // ASOCIACIONES: User <-> Like
-  // ============================================
-  User.hasMany(Like, {
-    foreignKey: 'user_id',
-    as: 'likes'
-  });
-
-  Like.belongsTo(User, {
-    foreignKey: 'user_id',
-    as: 'user'
-  });
-
-  // ============================================
-  // ASOCIACIONES: Fossil (Post) <-> Like
-  // ============================================
-  Fossil.hasMany(Like, {
-    foreignKey: 'post_id',
-    as: 'likes'
-  });
-
-  Like.belongsTo(Fossil, {
-    foreignKey: 'post_id',
-    as: 'post'
-  });
-
-  console.log('✅ Asociaciones configuradas correctamente');
-};
-
-// Configurar asociaciones al inicio
-setupAssociations();
 
 // ============================================
 // HOOKS DE JEST
@@ -108,13 +35,16 @@ setupAssociations();
 beforeAll(async () => {
   try {
     console.log('\n🧪 ========================================');
-    console.log('INICIANDO TESTS - SETUP');
+    console.log('INICIANDO TESTS - SETUP (SEQUELIZE-TYPESCRIPT)');
     console.log('========================================\n');
 
     // Conectar a la base de datos de test
     await sequelize.authenticate();
     console.log('✅ Conectado a la base de datos de test');
     console.log(`📊 Database: ${process.env.DB_TEST_NAME || 'game_of_bones_app_test'}`);
+
+    // ✅ Con sequelize-typescript, los modelos ya están registrados automáticamente
+    console.log('📦 Modelos cargados automáticamente vía decoradores');
 
     // Sincronizar modelos (recrear tablas)
     await sequelize.sync({ force: true });
