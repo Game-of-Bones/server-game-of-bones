@@ -38,14 +38,21 @@ const startServer = async () => {
 
     // 2. Sincronizar modelos con la BD
     console.log('🔄 Sincronizando modelos...');
-
+    // ⚠️ IMPORTANTE: En producción, NUNCA usar force: true
     // ⚠️ IMPORTANTE: En producción, NUNCA usar force: true
     if (NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true }); // Ajusta tablas sin borrar datos
+      // Desactivar verificación de foreign keys temporalmente
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+
+      // 👇 BORRAR TABLA POSTS FANTASMA
+      await sequelize.query('DROP TABLE IF EXISTS posts');
+
+      await sequelize.sync({ force: true });
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
     } else if (NODE_ENV === 'test') {
-      await sequelize.sync({ force: true }); // Recrea tablas en tests
+      await sequelize.sync({ force: true });
     } else {
-      await sequelize.sync(); // Solo crea tablas faltantes en producción
+      await sequelize.sync();
     }
 
     console.log('✅ Modelos sincronizados con la base de datos\n');
