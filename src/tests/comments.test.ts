@@ -1,242 +1,334 @@
-/**
- * TESTS DE COMENTARIOS
- * * NOTA: Estos tests no funcionarán hasta que User y Post estén implementados.
- * Se han eliminado las pruebas de anidación (parent_id) para coincidir con el
- * controlador actual.
- */
-
+// src/tests/comments.test.ts
 import request from 'supertest';
 import app from '../app';
-import { Comment } from '../models/Comment'; 
+import sequelize from '../database/database';
+import { User } from '../models/User';
+import { Comment } from '../models/Comment';
+import Fossil from '../models/GobModelPost';
+import bcrypt from 'bcrypt';
 
-// Declarar tipos temporales para User y Post
-type User = any;
-type Post = any;
+describe('Comments API Tests', () => {
+  let userToken: string;
+  let adminToken: string;
+  let testUser: User;
+  let testPost: Fossil;
+  let testComment: Comment;
 
-// Mock temporal de User y Post (comentar cuando existan los modelos reales)
-const User = {
-    create: jest.fn(),
-    destroy: jest.fn(),
-};
+  beforeAll(async () => {
+    // Sincronizar BD
+    await sequelize.sync({ force: true });
 
-const Post = {
-    create: jest.fn(),
-    destroy: jest.fn(),
-    findByPk: jest.fn(),
-};
+    // Crear usuario de prueba
+    testUser = await User.create({
+      username: 'commenter',
+      email: 'commenter@test.com',
+      password_hash: await bcrypt.hash('password123', 12),
+      role: 'user'
+    });
 
-describe('Comments API', () => {
-    let testUser: User;
-    let testPost: Post;
+    // Crear admin
+    const admin = await User.create({
+      username: 'admin',
+      email: 'admin@test.com',
+      password_hash: await bcrypt.hash('admin123', 12),
+      role: 'admin'
+    });
 
+    // Obtener tokens
+    const userLogin = await request(app)
+      .post('/gameofbones/auth/login')
+      .send({ email: 'commenter@test.com', password: 'password123' });
+    userToken = userLogin.body.data.token;
+
+    const adminLogin = await request(app)
+      .post('/gameofbones/auth/login')
+      .send({ email: 'admin@test.com', password: 'admin123' });
+    adminToken = adminLogin.body.data.token;
+
+    // Crear post de prueba
+    testPost = await Fossil.create({
+      title: 'Test Fossil Post',
+      summary: 'Este es un post de prueba para comentarios',
+      author_id: testUser.id,
+      fossil_type: 'bones_teeth',
+      status: 'published'
+    });
+  });
+
+  afterAll(async () => {
+    await sequelize.close();
+  });
+
+  beforeEach(async () => {
+    // Limpiar comentarios antes de cada test
+    await Comment.destroy({ where: {}, force: true });
+  });
+
+  describe('POST /gameofbones/posts/:postId/comments', () => {
+    it('debe crear un comentario exitosamente', async () => {
+      const response = await request(app)
+        .post(`/gameofbones/posts/${testPost.id}/comments`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Este es un comentario de prueba'
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('id');
+      expect(response.body.data.content).toBe('Este es un comentario de prueba');
+      expect(response.body.data.user_id).toBe(testUser.id);
+      expect(response.body.data.post_id).toBe(testPost.id);
+    });
+
+    it('debe rechazar comentario sin autenticación', async () => {
+      const response = await request(app)
+        .post(`/gameofbones/posts/${testPost.id}/comments`)
+        .send({
+          content: 'Comentario sin auth'
+        });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('debe rechazar comentario vacío', async () => {
+      const response = await request(app)
+        .post(`/gameofbones/posts/${testPost.id}/comments`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: ''
+        });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('debe rechazar comentario en post inexistente', async () => {
+      const response = await request(app)
+        .post('/gameofbones/posts/99999/comments')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Comentario en post inexistente'
+        });
+
+      expect(response.status).toBe(404);
+    });
+  });
+
+  describe('GET /gameofbones/posts/:postId/comments', () => {
     beforeEach(async () => {
-        // NOTA: Estos tests no funcionarán hasta que User y Post existan
-        // Descomenta estas líneas cuando estén disponibles:
-        
-        /*
-        // Crear usuario de prueba
-        testUser = await User.create({
-          username: 'testuser',
-          email: 'test@example.com',
-          password: 'hashedpassword123',
-        });
+      // Crear varios comentarios para las pruebas
+      await Comment.create({
+        post_id: testPost.id,
+        user_id: testUser.id,
+        content: 'Primer comentario'
+      });
 
-        // Crear post de prueba
-        testPost = await Post.create({
-          user_id: testUser.id,
-          title: 'Test Post',
-          content: 'This is a test post content',
-        });
-        */
+      await Comment.create({
+        post_id: testPost.id,
+        user_id: testUser.id,
+        content: 'Segundo comentario'
+      });
     });
 
-    afterEach(async () => {
-        // Limpiar datos después de cada test
-        // Descomenta cuando User y Post existan:
-        /*
-        await Comment.destroy({ where: {}, truncate: true, cascade: true });
-        await Post.destroy({ where: {}, truncate: true, cascade: true });
-        await User.destroy({ where: {}, truncate: true, cascade: true });
-        */
+    it('debe obtener todos los comentarios de un post', async () => {
+      const response = await request(app)
+        .get(`/gameofbones/posts/${testPost.id}/comments`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.count).toBe(2);
     });
 
-    // Tests comentados hasta que User y Post existan
-    describe.skip('POST /api/comments', () => {
-        it('debe crear un comentario exitosamente', async () => {
-            const commentData = {
-                // Se asume que testPost.id y testUser.id son BigInts (o strings)
-                post_id: testPost.id.toString(), 
-                user_id: testUser.id.toString(),
-                content: 'Este es un comentario de prueba',
-            };
+    it('debe incluir información del autor', async () => {
+      const response = await request(app)
+        .get(`/gameofbones/posts/${testPost.id}/comments`);
 
-            const response = await request(app)
-                .post('/api/comments')
-                .send(commentData)
-                .expect(201);
-
-            expect(response.body).toHaveProperty('id');
-            expect(response.body.content).toBe(commentData.content);
-            expect(response.body).not.toHaveProperty('parent_id');
-        });
-
-        // ELIMINADO: El test 'debe crear una respuesta a un comentario' 
-        // ya que el controlador actual no soporta parent_id.
-
-        it('debe retornar 404 si el post no existe', async () => {
-            const commentData = {
-                post_id: '99999',
-                user_id: testUser.id.toString(),
-                content: 'Comentario para post inexistente',
-            };
-
-            // Para que este test funcione correctamente con los mocks temporales,
-            // debes asegurarte de que Post.findByPk(99999) devuelva null.
-            // Si no estás usando los mocks de Post.findByPk, este test fallará.
-            Post.findByPk.mockResolvedValueOnce(null);
-
-            await request(app)
-                .post('/api/comments')
-                .send(commentData)
-                .expect(404);
-        });
+      expect(response.status).toBe(200);
+      expect(response.body.data[0]).toHaveProperty('author');
+      expect(response.body.data[0].author).toHaveProperty('username');
+      expect(response.body.data[0].author.password_hash).toBeUndefined();
     });
 
-    describe.skip('GET /api/posts/:post_id/comments', () => {
-        it('debe obtener todos los comentarios de un post (sin anidación)', async () => {
-            // Crear varios comentarios
-            await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Primer comentario',
-            });
+    it('debe devolver array vacío si no hay comentarios', async () => {
+      await Comment.destroy({ where: {}, force: true });
 
-            await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Segundo comentario',
-            });
+      const response = await request(app)
+        .get(`/gameofbones/posts/${testPost.id}/comments`);
 
-            const response = await request(app)
-                .get(`/api/posts/${testPost.id}/comments`)
-                .expect(200);
-
-            expect(Array.isArray(response.body)).toBe(true);
-            expect(response.body.length).toBe(2);
-            // Verificar que no hay campo 'replies' ni 'parent_id'
-            expect(response.body[0]).not.toHaveProperty('replies');
-            expect(response.body[0]).not.toHaveProperty('parent_id');
-        });
-
-        it('debe incluir información del usuario en los comentarios', async () => {
-            await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Comentario con usuario',
-            });
-
-            const response = await request(app)
-                .get(`/api/posts/${testPost.id}/comments`)
-                .expect(200);
-
-            expect(response.body[0]).toHaveProperty('user');
-            expect(response.body[0].user).toHaveProperty('username');
-        });
-
-        it('debe retornar array vacío si no hay comentarios', async () => {
-            const response = await request(app)
-                .get(`/api/posts/${testPost.id}/comments`)
-                .expect(200);
-
-            expect(Array.isArray(response.body)).toBe(true);
-            expect(response.body.length).toBe(0);
-        });
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.count).toBe(0);
     });
 
-    describe.skip('GET /api/comments/:id', () => {
-        it('debe obtener un comentario por ID', async () => {
-            const comment = await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Comentario específico',
-            });
+    it('debe devolver 404 para post inexistente', async () => {
+      const response = await request(app)
+        .get('/gameofbones/posts/99999/comments');
 
-            const response = await request(app)
-                .get(`/api/comments/${comment.id}`)
-                .expect(200);
+      expect(response.status).toBe(404);
+    });
+  });
 
-            expect(response.body.id).toBe(comment.id.toString());
-            expect(response.body.content).toBe(comment.content);
-            expect(response.body).not.toHaveProperty('replies');
-            expect(response.body).not.toHaveProperty('parent_id');
-        });
-
-        it('debe retornar 404 si el comentario no existe', async () => {
-            await request(app)
-                .get('/api/comments/99999')
-                .expect(404);
-        });
+  describe('GET /gameofbones/comments/:id', () => {
+    beforeEach(async () => {
+      testComment = await Comment.create({
+        post_id: testPost.id,
+        user_id: testUser.id,
+        content: 'Comentario específico'
+      });
     });
 
-    describe.skip('PUT /api/comments/:id', () => {
-        it('debe actualizar un comentario', async () => {
-            const comment = await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Contenido original',
-            });
+    it('debe obtener un comentario por ID', async () => {
+      const response = await request(app)
+        .get(`/gameofbones/comments/${testComment.id}`);
 
-            const updatedContent = 'Contenido actualizado';
-
-            const response = await request(app)
-                .put(`/api/comments/${comment.id}`)
-                .send({ content: updatedContent })
-                .expect(200);
-
-            expect(response.body.content).toBe(updatedContent);
-        });
-
-        it('debe retornar 404 si el comentario no existe', async () => {
-            await request(app)
-                .put('/api/comments/99999')
-                .send({ content: 'Nuevo contenido' })
-                .expect(404);
-        });
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.id).toBe(testComment.id);
+      expect(response.body.data.content).toBe('Comentario específico');
     });
 
-    describe.skip('DELETE /api/comments/:id', () => {
-        it('debe eliminar lógicamente un comentario (soft delete)', async () => {
-            const comment = await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Comentario a eliminar',
-            });
+    it('debe devolver 404 si el comentario no existe', async () => {
+      const response = await request(app)
+        .get('/gameofbones/comments/99999');
 
-            await request(app)
-                .delete(`/api/comments/${comment.id}`)
-                .expect(200);
-
-            // Verificar que el comentario existe pero tiene el campo deleted_at no nulo
-            const deletedComment = await Comment.findOne({
-                where: { id: comment.id },
-                paranoid: false // Incluir registros eliminados lógicamente
-            });
-            
-            // Se añade la comprobación para satisfacer a TypeScript
-            expect(deletedComment).toBeTruthy();
-            if (deletedComment) {
-                // Sequelize soft delete (paranoid: true) cambia el comportamiento de findByPk. 
-                // Para confirmar el soft delete, buscamos con paranoid: false.
-                expect(deletedComment.deleted_at).not.toBeNull();
-            }
-        });
-
-        it('debe retornar 404 si el comentario no existe', async () => {
-            await request(app)
-                .delete('/api/comments/99999')
-                .expect(404);
-        });
-
-        
+      expect(response.status).toBe(404);
     });
+  });
+
+  describe('PUT /gameofbones/comments/:id', () => {
+    beforeEach(async () => {
+      testComment = await Comment.create({
+        post_id: testPost.id,
+        user_id: testUser.id,
+        content: 'Contenido original'
+      });
+    });
+
+    it('debe actualizar un comentario propio', async () => {
+      const response = await request(app)
+        .put(`/gameofbones/comments/${testComment.id}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Contenido actualizado'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.content).toBe('Contenido actualizado');
+    });
+
+    it('debe rechazar actualización de comentario ajeno', async () => {
+      const response = await request(app)
+        .put(`/gameofbones/comments/${testComment.id}`)
+        .set('Authorization', `Bearer ${adminToken}`) // Admin intenta editar comentario de user
+        .send({
+          content: 'Intento de hackeo'
+        });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('debe rechazar contenido vacío', async () => {
+      const response = await request(app)
+        .put(`/gameofbones/comments/${testComment.id}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: ''
+        });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('debe devolver 404 si el comentario no existe', async () => {
+      const response = await request(app)
+        .put('/gameofbones/comments/99999')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          content: 'Contenido'
+        });
+
+      expect(response.status).toBe(404);
+    });
+  });
+
+  describe('DELETE /gameofbones/comments/:id', () => {
+    beforeEach(async () => {
+      testComment = await Comment.create({
+        post_id: testPost.id,
+        user_id: testUser.id,
+        content: 'Comentario a eliminar'
+      });
+    });
+
+    it('debe permitir eliminar comentario propio (soft delete)', async () => {
+      const response = await request(app)
+        .delete(`/gameofbones/comments/${testComment.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      // Verificar soft delete
+      const deletedComment = await Comment.findByPk(testComment.id, { paranoid: false });
+      expect(deletedComment).toBeTruthy();
+      expect(deletedComment?.deleted_at).not.toBeNull();
+    });
+
+    it('debe permitir al admin eliminar cualquier comentario', async () => {
+      const response = await request(app)
+        .delete(`/gameofbones/comments/${testComment.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+    });
+
+    it('debe devolver 404 si el comentario no existe', async () => {
+      const response = await request(app)
+        .delete('/gameofbones/comments/99999')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('debe rechazar eliminación sin autenticación', async () => {
+      const response = await request(app)
+        .delete(`/gameofbones/comments/${testComment.id}`);
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe('GET /gameofbones/users/:userId/comments', () => {
+    beforeEach(async () => {
+      await Comment.create({
+        post_id: testPost.id,
+        user_id: testUser.id,
+        content: 'Comentario 1 del usuario'
+      });
+
+      await Comment.create({
+        post_id: testPost.id,
+        user_id: testUser.id,
+        content: 'Comentario 2 del usuario'
+      });
+    });
+
+    it('debe obtener todos los comentarios de un usuario', async () => {
+      const response = await request(app)
+        .get(`/gameofbones/users/${testUser.id}/comments`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.count).toBe(2);
+    });
+
+    it('debe devolver 404 si el usuario no existe', async () => {
+      const response = await request(app)
+        .get('/gameofbones/users/99999/comments');
+
+      expect(response.status).toBe(404);
+    });
+  });
 });

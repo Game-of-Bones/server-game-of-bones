@@ -1,65 +1,190 @@
 /**
  * CONFIGURACIÓN DE TESTS
- * 
+ *
  * Inicializa la base de datos de test y configura el entorno
  */
 
 import { config } from 'dotenv';
 import sequelize from '../database/database';
 
+// ✅ Importar todos los modelos para configurar asociaciones
+import { User } from '../models/User';
+import { Comment } from '../models/Comment';
+import Fossil from '../models/GobModelPost'; // Post/Fossil
+import { Like } from '../models/Like';
+
 // Cargar variables de entorno
 config();
 
-// Función para configurar asociaciones (por ahora vacía)
+// ✅ IMPORTANTE: Forzar NODE_ENV a test
+process.env.NODE_ENV = 'test';
+
+/**
+ * Configurar asociaciones entre modelos
+ * Esta función se ejecuta antes de los tests para establecer relaciones
+ */
 export const setupAssociations = (): void => {
-  // Esta función configurará las asociaciones cuando todos los modelos existan
-  // Por ahora la dejamos vacía para evitar errores
-  
-  // Cuando User y Post existan, aquí irán las asociaciones:
-  /*
-  User.hasMany(Post, { foreignKey: 'user_id', as: 'posts' });
-  Post.belongsTo(User, { foreignKey: 'user_id', as: 'author' });
-  
-  Post.hasMany(Comment, { foreignKey: 'post_id', as: 'comments' });
-  Comment.belongsTo(Post, { foreignKey: 'post_id', as: 'post' });
-  
-  User.hasMany(Comment, { foreignKey: 'user_id', as: 'comments' });
-  Comment.belongsTo(User, { foreignKey: 'user_id', as: 'author' });
-  */
+  console.log('🔗 Configurando asociaciones de modelos...');
+
+  // ============================================
+  // ASOCIACIONES: User <-> Fossil (Post)
+  // ============================================
+  User.hasMany(Fossil, {
+    foreignKey: 'author_id',
+    as: 'posts'
+  });
+
+  Fossil.belongsTo(User, {
+    foreignKey: 'author_id',
+    as: 'author'
+  });
+
+  // ============================================
+  // ASOCIACIONES: User <-> Comment
+  // ============================================
+  User.hasMany(Comment, {
+    foreignKey: 'user_id',
+    as: 'comments'
+  });
+
+  Comment.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'author'
+  });
+
+  // ============================================
+  // ASOCIACIONES: Fossil (Post) <-> Comment
+  // ============================================
+  Fossil.hasMany(Comment, {
+    foreignKey: 'post_id',
+    as: 'comments'
+  });
+
+  Comment.belongsTo(Fossil, {
+    foreignKey: 'post_id',
+    as: 'post'
+  });
+
+  // ============================================
+  // ASOCIACIONES: User <-> Like
+  // ============================================
+  User.hasMany(Like, {
+    foreignKey: 'user_id',
+    as: 'likes'
+  });
+
+  Like.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+  });
+
+  // ============================================
+  // ASOCIACIONES: Fossil (Post) <-> Like
+  // ============================================
+  Fossil.hasMany(Like, {
+    foreignKey: 'post_id',
+    as: 'likes'
+  });
+
+  Like.belongsTo(Fossil, {
+    foreignKey: 'post_id',
+    as: 'post'
+  });
+
+  console.log('✅ Asociaciones configuradas correctamente');
 };
 
 // Configurar asociaciones al inicio
 setupAssociations();
 
-// Antes de todos los tests
+// ============================================
+// HOOKS DE JEST
+// ============================================
+
+/**
+ * Antes de TODOS los tests
+ * Se ejecuta una sola vez al inicio
+ */
 beforeAll(async () => {
   try {
+    console.log('\n🧪 ========================================');
+    console.log('INICIANDO TESTS - SETUP');
+    console.log('========================================\n');
+
     // Conectar a la base de datos de test
     await sequelize.authenticate();
     console.log('✅ Conectado a la base de datos de test');
-    
+    console.log(`📊 Database: ${process.env.DB_TEST_NAME || 'game_of_bones_app_test'}`);
+
     // Sincronizar modelos (recrear tablas)
     await sequelize.sync({ force: true });
-    console.log('✅ Tablas creadas en la base de datos de test');
+    console.log('✅ Tablas creadas en la base de datos de test\n');
+
   } catch (error) {
     console.error('❌ Error en setup de tests:', error);
     throw error;
   }
 });
 
-// Después de todos los tests
+/**
+ * Después de TODOS los tests
+ * Se ejecuta una sola vez al final
+ */
 afterAll(async () => {
   try {
+    console.log('\n🧹 Limpiando y cerrando conexión...');
+
     // Cerrar conexión
     await sequelize.close();
     console.log('✅ Conexión a la base de datos cerrada');
+
+    console.log('\n========================================');
+    console.log('TESTS FINALIZADOS');
+    console.log('========================================\n');
+
   } catch (error) {
     console.error('❌ Error al cerrar conexión:', error);
   }
 });
 
-// Limpiar base de datos después de cada test (opcional)
+/**
+ * Después de CADA test individual (opcional)
+ * Útil para limpiar datos entre tests
+ */
 afterEach(async () => {
-  // Opcional: limpiar datos entre tests
-  // await sequelize.truncate({ cascade: true, restartIdentity: true });
+  // ⚠️ COMENTADO por defecto para que cada test tenga sus propios datos
+  // Descomentar si quieres limpiar la BD después de cada test:
+
+  /*
+  try {
+    // Limpiar todas las tablas (en orden inverso a las FK)
+    await Like.destroy({ where: {}, force: true });
+    await Comment.destroy({ where: {}, force: true });
+    await Fossil.destroy({ where: {}, force: true });
+    await User.destroy({ where: {}, force: true });
+  } catch (error) {
+    console.error('Error al limpiar datos entre tests:', error);
+  }
+  */
 });
+
+/**
+ * Timeout global para operaciones de BD
+ */
+jest.setTimeout(10000); // 10 segundos
+
+// ============================================
+// OPCIONAL: Silenciar logs durante tests
+// ============================================
+
+// Descomentar para silenciar console.log durante tests:
+/*
+global.console = {
+  ...console,
+  log: jest.fn(),    // Silencia console.log
+  debug: jest.fn(),  // Silencia console.debug
+  info: jest.fn(),   // Silencia console.info
+  warn: jest.fn(),   // Silencia console.warn
+  // error se mantiene para ver errores reales
+};
+*/

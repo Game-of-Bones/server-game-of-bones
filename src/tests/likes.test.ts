@@ -1,121 +1,294 @@
-import request from "supertest";
-import app from "../app";
-import database from "../database/client";
-import { exec as execCallback } from "child_process";
-import { promisify } from "util";
-const exec = promisify(execCallback);
+// src/tests/likes.test.ts
+import request from 'supertest';
+import app from '../app';
+import sequelize from '../database/database';
+import { User } from '../models/User';
+import Like from '../models/Like'; // ✅ Import como default
+import Fossil from '../models/GobModelPost';
+import bcrypt from 'bcrypt';
 
-describe("Likes API", () => {
-  const token = "fake-test-token";
+describe('Likes API Tests', () => {
+  let userToken: string;
+  let user2Token: string;
+  let testUser: User;
+  let testUser2: User;
+  let testPost: Fossil;
 
-  // Reset database once before all tests
   beforeAll(async () => {
-    try {
-      await exec("npm run test:reset");
-      // Wait for database to be ready
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (err) {
-      console.error("Failed to reset test database:", err);
-      throw err;
-    }
-  }, 30000);
+    // Sincronizar BD
+    await sequelize.sync({ force: true });
 
-  afterAll(async () => {
-    await database.end();
-  });
-
-  describe("GET /api/posts/:postId/likes", () => {
-    it("should return the correct like count for a post", async () => {
-      const response = await request(app).get("/api/posts/1/likes");
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty("count");
-      expect(typeof response.body.count).toBe("number");
-      expect(response.body.count).toBeGreaterThanOrEqual(0);
+    // Crear usuarios de prueba
+    testUser = await User.create({
+      username: 'liker1',
+      email: 'liker1@test.com',
+      password_hash: await bcrypt.hash('password123', 12),
+      role: 'user'
     });
 
-    it("should return a count of 0 for a post with no likes", async () => {
-      // First, remove any existing likes on post 1
-      await request(app)
-        .post("/api/posts/1/like")
-        .set("Authorization", `Bearer ${token}`);
-      
-      // If there was a like, remove it again to ensure count is 0
-      const checkResponse = await request(app).get("/api/posts/1/likes");
-      if (checkResponse.body.count > 0) {
-        await request(app)
-          .post("/api/posts/1/like")
-          .set("Authorization", `Bearer ${token}`);
-      }
+    testUser2 = await User.create({
+      username: 'liker2',
+      email: 'liker2@test.com',
+      password_hash: await bcrypt.hash('password123', 12),
+      role: 'user'
+    });
 
-      const response = await request(app).get("/api/posts/1/likes");
+    // Obtener tokens
+    const user1Login = await request(app)
+      .post('/gameofbones/auth/login')
+      .send({ email: 'liker1@test.com', password: 'password123' });
+    userToken = user1Login.body.data.token;
+
+    const user2Login = await request(app)
+      .post('/gameofbones/auth/login')
+      .send({ email: 'liker2@test.com', password: 'password123' });
+    user2Token = user2Login.body.data.token;
+
+    // Crear post de prueba
+    testPost = await Fossil.create({
+      title: 'Post para Likes',
+      summary: 'Este post se usará para probar likes',
+      author_id: testUser.id,
+      fossil_type: 'bones_teeth',
+      status: 'published'
+    });
+  });
+
+  afterAll(async () => {
+    await sequelize.close();
+  });
+
+  beforeEach(async () => {
+    // Limpiar likes antes de cada test
+    await Like.destroy({ where: {}, force: true });
+  });
+
+  describe('GET /api/posts/:postId/likes', () => {
+    it('debe devolver el conteo correcto de likes', async () => {
+      // Crear algunos likes
+      await Like.create({
+        user_id: testUser.id,
+        post_id: testPost.id
+      });
+
+      await Like.create({
+        user_id: testUser2.id,
+        post_id: testPost.id
+      });
+
+      const response = await request(app)
+        .get(`/api/posts/${testPost.id}/likes`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.count).toBe(2);
+    });
+
+    it('debe devolver 0 para post sin likes', async () => {
+      const response = await request(app)
+        .get(`/api/posts/${testPost.id}/likes`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.count).toBe(0);
+    });
+
+    it('debe devolver 404 para post inexistente', async () => {
+      const response = await request(app)
+        .get('/api/posts/99999/likes');
+
+      expect(response.status).toBe(404);
+    });
+  });
+
+  describe('POST /api/posts/:postId/like (Toggle)', () => {
+    it('debe permitir dar like si no lo ha dado antes', async () => {
+      const response = await request(app)
+        .post(`/api/posts/${testPost.id}/like`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.action).toBe('liked');
+
+      // Verificar que el like existe
+      const likeCount = await Like.count({
+        where: {
+          user_id: testUser.id,
+          post_id: testPost.id
+        }
+      });
+      expect(likeCount).toBe(1);
+    });
+
+    it('debe permitir quitar like si ya lo había dado', async () => {
+      // Primero dar like
+      await Like.create({
+        user_id: testUser.id,
+        post_id: testPost.id
+      });
+
+      // Luego quitarlo
+      const response = await request(app)
+        .post(`/api/posts/${testPost.id}/like`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.action).toBe('unliked');
+
+      // Verificar que el like ya no existe
+      const likeCount = await Like.count({
+        where: {
+          user_id: testUser.id,
+          post_id: testPost.id
+        }
+      });
+      expect(likeCount).toBe(0);
+    });
+
+    it('debe rechazar like sin autenticación', async () => {
+      const response = await request(app)
+        .post(`/api/posts/${testPost.id}/like`);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('debe devolver 404 para post inexistente', async () => {
+      const response = await request(app)
+        .post('/api/posts/99999/like')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('debe permitir que diferentes usuarios den like al mismo post', async () => {
+      // User 1 da like
+      await request(app)
+        .post(`/api/posts/${testPost.id}/like`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      // User 2 da like
+      const response = await request(app)
+        .post(`/api/posts/${testPost.id}/like`)
+        .set('Authorization', `Bearer ${user2Token}`);
+
+      expect(response.status).toBe(201);
+
+      // Verificar que hay 2 likes
+      const totalLikes = await Like.count({
+        where: { post_id: testPost.id }
+      });
+      expect(totalLikes).toBe(2);
+    });
+  });
+
+  describe('GET /api/posts/:postId/like/check', () => {
+    it('debe indicar que el usuario ha dado like', async () => {
+      // Crear like
+      await Like.create({
+        user_id: testUser.id,
+        post_id: testPost.id
+      });
+
+      const response = await request(app)
+        .get(`/api/posts/${testPost.id}/like/check`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.hasLiked).toBe(true);
+    });
+
+    it('debe indicar que el usuario NO ha dado like', async () => {
+      const response = await request(app)
+        .get(`/api/posts/${testPost.id}/like/check`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.hasLiked).toBe(false);
+    });
+
+    it('debe rechazar sin autenticación', async () => {
+      const response = await request(app)
+        .get(`/api/posts/${testPost.id}/like/check`);
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe('GET /api/users/:userId/likes', () => {
+    beforeEach(async () => {
+      // Crear otro post
+      const post2 = await Fossil.create({
+        title: 'Segundo Post',
+        summary: 'Otro post',
+        author_id: testUser.id,
+        fossil_type: 'bones_teeth',
+        status: 'published'
+      });
+
+      // Usuario da like a 2 posts
+      await Like.create({
+        user_id: testUser.id,
+        post_id: testPost.id
+      });
+
+      await Like.create({
+        user_id: testUser.id,
+        post_id: post2.id
+      });
+    });
+
+    it('debe obtener todos los likes de un usuario', async () => {
+      const response = await request(app)
+        .get(`/api/users/${testUser.id}/likes`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.count).toBe(2);
+    });
+
+    it('debe incluir información del post', async () => {
+      const response = await request(app)
+        .get(`/api/users/${testUser.id}/likes`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data[0]).toHaveProperty('post');
+      expect(response.body.data[0].post).toHaveProperty('title');
+    });
+
+    it('debe devolver 404 para usuario inexistente', async () => {
+      const response = await request(app)
+        .get('/api/users/99999/likes');
+
+      expect(response.status).toBe(404);
+    });
+
+    it('debe devolver array vacío si el usuario no tiene likes', async () => {
+      const response = await request(app)
+        .get(`/api/users/${testUser2.id}/likes`);
+
       expect(response.status).toBe(200);
       expect(response.body.count).toBe(0);
     });
   });
 
-  describe("POST /api/posts/:postId/like", () => {
-    it("should return 401 if the user is not authenticated", async () => {
-      const response = await request(app).post("/api/posts/1/like");
+  describe('Restricción UNIQUE (user_id, post_id)', () => {
+    it('no debe permitir duplicar likes del mismo usuario al mismo post', async () => {
+      // Crear el primer like directamente en la BD
+      await Like.create({
+        user_id: testUser.id,
+        post_id: testPost.id
+      });
 
-      expect(response.status).toBe(401);
-    });
-
-    it("should allow an authenticated user to like a post", async () => {
-      // First ensure post has no likes
-      const checkResponse = await request(app).get("/api/posts/1/likes");
-      if (checkResponse.body.count > 0) {
-        await request(app)
-          .post("/api/posts/1/like")
-          .set("Authorization", `Bearer ${token}`);
-      }
-
-      const initialCount = await request(app).get("/api/posts/1/likes");
-      const startingLikes = initialCount.body.count;
-
-      const response = await request(app)
-        .post("/api/posts/1/like")
-        .set("Authorization", `Bearer ${token}`);
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty("message", "Like added successfully");
-
-      const countResponse = await request(app).get("/api/posts/1/likes");
-      expect(countResponse.body.count).toBe(startingLikes + 1);
-    });
-
-    it("should allow an authenticated user to unlike a post they have already liked", async () => {
-      // First, ensure the post has a like from user 1
-      const checkResponse = await request(app).get("/api/posts/1/likes");
-      if (checkResponse.body.count === 0) {
-        await request(app)
-          .post("/api/posts/1/like")
-          .set("Authorization", `Bearer ${token}`);
-      }
-
-      // Get the current count
-      const initialCount = await request(app).get("/api/posts/1/likes");
-      const startingLikes = initialCount.body.count;
-
-      // Now unlike it
-      const response = await request(app)
-        .post("/api/posts/1/like")
-        .set("Authorization", `Bearer ${token}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty("message", "Like removed successfully");
-
-      const countResponse = await request(app).get("/api/posts/1/likes");
-      expect(countResponse.body.count).toBe(startingLikes - 1);
-    });
-
-    it("should return 404 if trying to like a non-existent post", async () => {
-      const response = await request(app)
-        .post("/api/posts/9999/like")
-        .set("Authorization", `Bearer ${token}`);
-
-      expect(response.status).toBe(404);
-      expect(response.text).toBe("Post not found");
+      // Intentar crear otro like igual (debería fallar)
+      await expect(
+        Like.create({
+          user_id: testUser.id,
+          post_id: testPost.id
+        })
+      ).rejects.toThrow();
     });
   });
 });
