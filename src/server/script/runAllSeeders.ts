@@ -7,6 +7,7 @@
 import dotenv from 'dotenv';
 import { syncDatabase } from '../../models';
 import { seedComments } from './03-comments';
+import { seedPosts } from './02-posts'; 
 
 dotenv.config();
 
@@ -17,13 +18,13 @@ const runAllSeeders = async (): Promise<void> => {
     // Sincronizar base de datos (recrear tablas)
     await syncDatabase(true);
     console.log('');
+// =====================================================
+    // 2️⃣ Ejecutar seeders en orden lógico
+    // =====================================================
 
-    // ============================================
-    // SEEDERS DISPONIBLES
-    // ============================================
-    
-    // Seeder de Comments (único disponible por ahora)
-    await seedComments();
+    // await seedUsers();   // (Descomenta cuando el seeder de usuarios esté listo)
+    await seedPosts();     // ✅ Seeder de posts (Fósiles)
+    await seedComments();  // ✅ Seeder de comentarios (usa post_id)
 
     // ============================================
     // SEEDERS PENDIENTES (de otros compañeros)
@@ -33,7 +34,6 @@ const runAllSeeders = async (): Promise<void> => {
     // Descomentar cuando estén disponibles:
     
     // await seedUsers();   // Pendiente: User seeder
-    // await seedPosts();   // Pendiente: Post seeder
     // await seedLikes();   // Pendiente: Like seeder
     */
 
