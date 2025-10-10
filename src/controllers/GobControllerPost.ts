@@ -1,8 +1,8 @@
 import { RequestHandler } from "express";
-import Fossil, { FossilType, Status } from "../models/GobModelPost";
+import Post, { FossilType, Status } from "../models/GobModelPost";
 
 // Definimos la interfaz para el body de la petición
-interface FossilRequestBody {
+interface PostRequestBody {
   title: string;
   summary: string;
   image_url?: string;
@@ -16,8 +16,8 @@ interface FossilRequestBody {
   source?: string;
 }
 
-// Creamos el controller usando RequestHandler
-export const createFossil: RequestHandler<{}, any, FossilRequestBody> = async (req, res) => {
+// -------------------- CREATE --------------------
+export const createPost: RequestHandler<{}, any, PostRequestBody> = async (req, res) => {
   try {
     const {
       title,
@@ -33,7 +33,7 @@ export const createFossil: RequestHandler<{}, any, FossilRequestBody> = async (r
       source,
     } = req.body;
 
-    const newFossil = await Fossil.create({
+    const newPost = await Post.create({
       title,
       summary,
       image_url,
@@ -48,84 +48,83 @@ export const createFossil: RequestHandler<{}, any, FossilRequestBody> = async (r
     });
 
     res.status(201).json({
-      message: "Fósil registrado correctamente",
-      data: newFossil,
+      message: "Publicación registrada correctamente",
+      data: newPost,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al crear el fósil" });
+    res.status(500).json({ error: "Error al crear la publicación" });
   }
 };
 
-
-/* -------------------- READ ALL -------------------- */
-export const getAllFossils: RequestHandler = async (req, res) => {
+// -------------------- READ ALL --------------------
+export const getAllPosts: RequestHandler = async (req, res) => {
   try {
-    const fossils = await Fossil.findAll();
-    res.status(200).json({ data: fossils });
+    const posts = await Post.findAll();
+    res.status(200).json({ data: posts });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al obtener los fósiles" });
+    res.status(500).json({ error: "Error al obtener las publicaciones" });
   }
 };
 
-/* -------------------- READ ONE -------------------- */
-export const getFossilById: RequestHandler<{ id: string }> = async (req, res) => {
+// -------------------- READ ONE --------------------
+export const getPostById: RequestHandler<{ id: string }> = async (req, res) => {
   try {
     const { id } = req.params;
-    const fossil = await Fossil.findByPk(id);
+    const post = await Post.findByPk(id);
 
-    if (!fossil) {
-      return res.status(404).json({ error: "Fósil no encontrado" });
+    if (!post) {
+      return res.status(404).json({ error: "Publicación no encontrada" });
     }
 
-    res.status(200).json({ data: fossil });
+    res.status(200).json({ data: post });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al obtener el fósil" });
+    res.status(500).json({ error: "Error al obtener la publicación" });
   }
 };
 
-/* -------------------- UPDATE -------------------- */
-export const updateFossil: RequestHandler<{ id: string }, any, Partial<FossilRequestBody>> = async (req, res) => {
+// -------------------- UPDATE --------------------
+export const updatePost: RequestHandler<{ id: string }, any, Partial<PostRequestBody>> = async (req, res) => {
   try {
     const { id } = req.params;
-    const fossil = await Fossil.findByPk(id);
+    const post = await Post.findByPk(id);
 
-    if (!fossil) {
-      return res.status(404).json({ error: "Fósil no encontrado" });
+    if (!post) {
+      return res.status(404).json({ error: "Publicación no encontrada" });
     }
 
-    await fossil.update({
+    await post.update({
       ...req.body,
-      discovery_date: req.body.discovery_date ? new Date(req.body.discovery_date) : fossil.discovery_date,
+      discovery_date: req.body.discovery_date ? new Date(req.body.discovery_date) : post.discovery_date,
     });
 
     res.status(200).json({
-      message: "Fósil actualizado correctamente",
-      data: fossil,
+      message: "Publicación actualizada correctamente",
+      data: post,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al actualizar el fósil" });
+    res.status(500).json({ error: "Error al actualizar la publicación" });
   }
 };
 
-/* -------------------- DELETE -------------------- */
-export const deleteFossil: RequestHandler<{ id: string }> = async (req, res) => {
+// -------------------- DELETE --------------------
+export const deletePost: RequestHandler<{ id: string }> = async (req, res) => {
   try {
     const { id } = req.params;
-    const fossil = await Fossil.findByPk(id);
+    const post = await Post.findByPk(id);
 
-    if (!fossil) {
-      return res.status(404).json({ error: "Fósil no encontrado" });
+    if (!post) {
+      return res.status(404).json({ error: "Publicación no encontrada" });
     }
 
-    await fossil.destroy();
+    await post.destroy();
 
-    res.status(200).json({ message: "Fósil eliminado correctamente" });
+    res.status(200).json({ message: "Publicación eliminada correctamente" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al eliminar el fósil" });
+    res.status(500).json({ error: "Error al eliminar la publicación" });
   }
 };

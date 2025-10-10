@@ -1,17 +1,22 @@
 import { Router } from "express";
-import { createFossil, getAllFossils, updateFossil,deleteFossil, getFossilById } from "../controllers/GobControllerPost";
+import { 
+  createPost, 
+  getAllPosts, 
+  getPostById, 
+  updatePost, 
+  deletePost 
+} from "../controllers/GobControllerPost";
 
 const router = Router();
 
-router.post("/", createFossil);
-router.get("/", getAllFossils);
-router.get("/:id", getFossilById);
-router.put("/:id", updateFossil);
-router.delete("/:id", deleteFossil);
+// 🔹 Ruta de prueba antes de /:id
+router.get("/test", (req, res) => res.send("✅ Ruta de publicaciones activa"));
 
-// Ruta de prueba opcional
-router.get("/test", (req, res) => {
-  res.send("✅ Ruta de fósiles activa");
-});
+// CRUD
+router.post("/", createPost);
+router.get("/", getAllPosts);
+router.get("/:id", getPostById);
+router.put("/:id", updatePost);
+router.delete("/:id", deletePost);
 
 export default router;

@@ -1,5 +1,5 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import sequelize from "../database/database"; // Ajusta si tu path es diferente
+import sequelize from "../database/database"; 
 
 // Tipos para TypeScript
 export type FossilType =
@@ -12,7 +12,7 @@ export type FossilType =
 export type Status = "draft" | "published";
 
 // Atributos del modelo
-interface FossilAttributes {
+interface PostAttributes {
   id: number;
   title: string;
   summary: string;
@@ -31,9 +31,9 @@ interface FossilAttributes {
 }
 
 // Campos opcionales al crear
-interface FossilCreationAttributes
+interface PostCreationAttributes
   extends Optional<
-    FossilAttributes,
+    PostAttributes,
     | "id"
     | "image_url"
     | "discovery_date"
@@ -45,8 +45,8 @@ interface FossilCreationAttributes
     | "deletedAt"
   > {}
 
-class Fossil extends Model<FossilAttributes, FossilCreationAttributes>
-  implements FossilAttributes {
+class Post extends Model<PostAttributes, PostCreationAttributes>
+  implements PostAttributes {
   public id!: number;
   public title!: string;
   public summary!: string;
@@ -65,7 +65,7 @@ class Fossil extends Model<FossilAttributes, FossilCreationAttributes>
   public readonly deletedAt!: Date | null;
 }
 
-Fossil.init(
+Post.init(
   {
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
     title: { type: DataTypes.STRING, allowNull: false },
@@ -96,11 +96,11 @@ Fossil.init(
   },
   {
     sequelize,
-    tableName: "fossils",
+    tableName: "post", 
     timestamps: true,
     paranoid: true,
     underscored: true,
   }
 );
 
-export default Fossil;
+export default Post;
