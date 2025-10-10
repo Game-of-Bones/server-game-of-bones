@@ -3,7 +3,9 @@ import authRouter from "./routes/auth.routes";
 import { createCommentsRouter } from "./routes/comments";
 
 // import postsRouter from "./routes/posts";
-// import likesRouter from "./routes/likes"; // ⚠️ Temporalmente comentado hasta que Like esté listo
+// import usersRouter from "./routes/users";
+import likesRouter from "./routes/likes";
+import fossilRoutes from "./routes/GobRoutesPost"; // 👈 Añadido
 
 const router = express.Router();
 
@@ -28,5 +30,8 @@ router.use(createCommentsRouter());
 
 // router.use(postsRouter);      // ⏳ Pendiente: Posts
 // router.use(likesRouter);       // ⏳ Pendiente: Likes
+
+// 👇 Nueva línea: conecta las rutas de fósiles
+router.use("/api/fossils", fossilRoutes);
 
 export default router;
