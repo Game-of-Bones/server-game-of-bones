@@ -1,6 +1,6 @@
 // src/controllers/commentsController.ts
 import { Request, Response } from 'express';
-import { Comment } from '../models/comment';
+import { Comment } from '../models/Comment';
 import { User } from '../models/User';
 // TODO: Descomentar cuando el modelo Post esté disponible
 // import { Post } from '../models/Post';

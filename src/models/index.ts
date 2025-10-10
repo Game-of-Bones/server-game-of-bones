@@ -3,7 +3,7 @@
  */
 
 import sequelize from '../database/database';
-import { Comment } from './comment';
+import { Comment } from './Comment';
 import { User } from './User';
 
 // NOTA: Estas importaciones darán error temporal hasta que tus compis
