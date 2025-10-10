@@ -1,6 +1,17 @@
-# Node modules
-node_modules
-
-# Environment variables
+Node
+node_modules/
 .env
+
+TypeScript
+dist/
+*.tsbuildinfo
+
+Logs
+logs/
+*.log
+
+Sistema
+.DS_Store
+
+Test
 coverage

@@ -1,11 +1,15 @@
-import express from "express";
-import authRouter from "./routes/auth.routes";
-import { createCommentsRouter } from "./routes/comments";
+// src/router.ts
+/**
+ * ROUTER PRINCIPAL
+ * Centraliza todas las rutas de la aplicación
+ */
 
-// import postsRouter from "./routes/posts";
-// import usersRouter from "./routes/users";
-import likesRouter from "./routes/likes";
-import fossilRoutes from "./routes/GobRoutesPost"; // 👈 Añadido
+import express from 'express';
+import authRouter from './routes/auth.routes';
+import usersRouter from './routes/users.routes';
+import fossilRoutes from './routes/posts';
+import { createCommentsRouter } from './routes/comments';
+import likesRouter from './routes/likes';
 
 const router = express.Router();
 
@@ -13,25 +17,40 @@ const router = express.Router();
 // RUTAS ACTIVAS
 // ============================================
 
-// Rutas de autenticación (User)
-// Rutas: POST /gameofbones/auth/register, POST /gameofbones/auth/login
+// Rutas de autenticación (auth)
+// POST /gameofbones/auth/register
+// POST /gameofbones/auth/login
 router.use('/auth', authRouter);
 
+// Rutas de usuarios (User CRUD)
+// GET    /gameofbones/users (lista usuarios - solo admin)
+// GET    /gameofbones/users/:id (ver usuario)
+// PUT    /gameofbones/users/:id (actualizar usuario)
+// DELETE /gameofbones/users/:id (eliminar usuario)
+// PATCH  /gameofbones/users/:id/role (cambiar rol - solo admin)
+router.use('/users', usersRouter);
+
+// Rutas de fósiles/posts (Post) - Gestiona tu compañera
+// GET    /gameofbones/api/fossils
+// POST   /gameofbones/api/fossils
+// PUT    /gameofbones/api/fossils/:id
+// DELETE /gameofbones/api/fossils/:id
+router.use('/api/fossils', fossilRoutes);
+
 // Rutas de comentarios (Comment)
-// Rutas: 
-// - GET/POST /gameofbones/posts/:postId/comments
-// - GET/PUT/DELETE /gameofbones/comments/:id
-// - GET /gameofbones/users/:userId/comments
+// GET    /gameofbones/posts/:postId/comments
+// POST   /gameofbones/posts/:postId/comments
+// GET    /gameofbones/comments/:id
+// PUT    /gameofbones/comments/:id
+// DELETE /gameofbones/comments/:id
+// GET    /gameofbones/users/:userId/comments
 router.use(createCommentsRouter());
 
-// ============================================
-// RUTAS PENDIENTES (de otros compañeros)
-// ============================================
-
-// router.use(postsRouter);      // ⏳ Pendiente: Posts
-// router.use(likesRouter);       // ⏳ Pendiente: Likes
-
-// 👇 Nueva línea: conecta las rutas de fósiles
-router.use("/api/fossils", fossilRoutes);
+// Rutas de likes
+// POST   /gameofbones/posts/:postId/like (toggle like)
+// GET    /gameofbones/posts/:postId/likes
+// GET    /gameofbones/users/:userId/likes
+// GET    /gameofbones/posts/:postId/like/check
+router.use(likesRouter);
 
 export default router;

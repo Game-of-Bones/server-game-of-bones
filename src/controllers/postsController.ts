@@ -1,10 +1,12 @@
+// src/controllers/postsController.ts
 import { RequestHandler } from "express";
-import Post, { FossilType, Status } from "../models/GobModelPost";
+import Post, { FossilType, Status } from "../models/Posts";
+import { User } from "../models/User";
 
-// Definimos la interfaz para el body de la petición
 interface PostRequestBody {
   title: string;
   summary: string;
+  post_content: string;
   image_url?: string;
   discovery_date?: string;
   location?: string;
@@ -22,6 +24,7 @@ export const createPost: RequestHandler<{}, any, PostRequestBody> = async (req, 
     const {
       title,
       summary,
+      post_content,
       image_url,
       discovery_date,
       location,
@@ -33,9 +36,22 @@ export const createPost: RequestHandler<{}, any, PostRequestBody> = async (req, 
       source,
     } = req.body;
 
+    if (!title || !summary || !post_content || !author_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Title, summary, post_content y author_id son requeridos",
+      });
+    }
+
+    const author = await User.findByPk(author_id);
+    if (!author) {
+      return res.status(404).json({ success: false, message: "Autor no encontrado" });
+    }
+
     const newPost = await Post.create({
       title,
       summary,
+      post_content,
       image_url,
       discovery_date: discovery_date ? new Date(discovery_date) : undefined,
       location,

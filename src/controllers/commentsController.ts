@@ -1,9 +1,7 @@
 // src/controllers/commentsController.ts
 import { Request, Response } from 'express';
-import { Comment } from '../models/Comment';
+import { Comment } from '../models/Comment';  // ✅ CORREGIDO: Desde models directamente
 import { User } from '../models/User';
-// TODO: Descomentar cuando el modelo Post esté disponible
-// import { Post } from '../models/Post';
 
 /**
  * Crear un nuevo comentario
@@ -13,7 +11,7 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
   try {
     const { postId } = req.params;
     const { content } = req.body;
-    const userId = req.user?.id; // Del middleware verifyToken
+    const userId = req.user?.id;
 
     if (!userId) {
       res.status(401).json({
@@ -23,19 +21,6 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // TODO: Verificar que el post existe cuando Post esté disponible
-    /*
-    const post = await Post.findByPk(postId);
-    if (!post) {
-      res.status(404).json({
-        success: false,
-        message: 'Post no encontrado'
-      });
-      return;
-    }
-    */
-
-    // Crear el comentario
     const comment = await Comment.create({
       post_id: parseInt(postId),
       user_id: userId,
@@ -57,25 +42,9 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-/**
- * Obtener comentarios de un post
- * GET /gameofbones/posts/:postId/comments
- */
 export const getCommentsByPost = async (req: Request, res: Response): Promise<void> => {
   try {
     const { postId } = req.params;
-
-    // TODO: Verificar que el post existe cuando Post esté disponible
-    /*
-    const post = await Post.findByPk(postId);
-    if (!post) {
-      res.status(404).json({
-        success: false,
-        message: 'Post no encontrado'
-      });
-      return;
-    }
-    */
 
     const comments = await Comment.findAll({
       where: { post_id: postId },
@@ -104,10 +73,6 @@ export const getCommentsByPost = async (req: Request, res: Response): Promise<vo
   }
 };
 
-/**
- * Obtener un comentario por ID
- * GET /gameofbones/comments/:id
- */
 export const getCommentById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -144,10 +109,6 @@ export const getCommentById = async (req: Request, res: Response): Promise<void>
   }
 };
 
-/**
- * Actualizar un comentario
- * PUT /gameofbones/comments/:id
- */
 export const updateComment = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -164,7 +125,6 @@ export const updateComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Verificar que el usuario es el autor del comentario
     if (comment.user_id !== userId) {
       res.status(403).json({
         success: false,
@@ -173,7 +133,6 @@ export const updateComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Actualizar
     await comment.update({ content });
 
     res.status(200).json({
@@ -191,10 +150,6 @@ export const updateComment = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-/**
- * Eliminar un comentario (soft delete)
- * DELETE /gameofbones/comments/:id
- */
 export const deleteComment = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -210,7 +165,6 @@ export const deleteComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Verificar que el usuario es el autor del comentario o es admin
     if (comment.user_id !== userId && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
@@ -219,7 +173,6 @@ export const deleteComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Soft delete
     await comment.destroy();
 
     res.status(200).json({
@@ -236,15 +189,10 @@ export const deleteComment = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-/**
- * Obtener comentarios de un usuario
- * GET /gameofbones/users/:userId/comments
- */
 export const getCommentsByUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
 
-    // Verificar que el usuario existe
     const user = await User.findByPk(userId);
     if (!user) {
       res.status(404).json({

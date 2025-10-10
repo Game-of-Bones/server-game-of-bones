@@ -2,7 +2,7 @@
  * SEEDER DE POSTS
  */
 
-import Post from "../../models/GobModelPost";
+import Post from "../../models/Posts";
 import { User } from "../../models/User";
 
 export const seedPosts = async (): Promise<void> => {

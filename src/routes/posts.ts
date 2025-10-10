@@ -5,7 +5,7 @@ import {
   getPostById, 
   updatePost, 
   deletePost 
-} from "../controllers/GobControllerPost";
+} from "../controllers/postsController";
 
 const router = Router();
 

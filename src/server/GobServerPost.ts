@@ -1,5 +1,5 @@
 import express from "express";
-import postRoutes from "../routes/GobRoutesPost";
+import postRoutes from "../routes/posts";
 import sequelize from "../database/database";
 
 const app = express();
