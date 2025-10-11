@@ -1,11 +1,12 @@
 // src/database/database.ts
+import "reflect-metadata";
 import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
 import path from 'path';
 
 // Importar modelos explícitamente
 import { User } from '../models/User';
-import Fossil from '../models/GobModelPost';
+import { Post } from '../models/Posts';
 import { Comment } from '../models/Comment';
 import { Like } from '../models/Like';
 
@@ -44,7 +45,8 @@ const sequelize = new Sequelize({
   dialect: 'mysql',
   
   // ✅ Cargar modelos explícitamente (NO usar models: [path])
-  models: [User, Fossil, Comment, Like],
+  models: [User, Post, Comment, Like],
+
   
   pool: {
     max: isTest ? 5 : 10,

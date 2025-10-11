@@ -1,7 +1,7 @@
 // src/server/seeders/development/04-likes.ts
 import { Like } from '../../../models/Like';
 import { User } from '../../../models/User';
-import Fossil from '../../../models/GobModelPost';
+import Fossil from '../../../models/Posts';
 
 export const seedLikes = async (): Promise<void> => {
   try {

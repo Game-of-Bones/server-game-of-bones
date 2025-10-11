@@ -13,7 +13,7 @@ dotenv.config();
 import sequelize from '../database/database';
 import { Like } from '../models/Like';
 import { Comment } from '../models/Comment';
-import Fossil from '../models/GobModelPost';
+import Fossil from '../models/Posts';
 import { User } from '../models/User';
 
 const cleanDatabase = async (): Promise<void> => {

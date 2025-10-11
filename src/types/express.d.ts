@@ -6,7 +6,7 @@
 
 import { User } from '../models/User';
 import { Like } from '../models/Like';
-import Fossil from '../models/GobModelPost';
+import Fossil from '../models/Posts';
 
 declare global {
   namespace Express {

@@ -91,7 +91,7 @@
 
 import { Comment } from '../../../models/Comment';
 import { User } from '../../../models/User';
-import Fossil from '../../../models/GobModelPost'; // ✅ Ya disponible
+import Fossil from '../../../models/Posts'; // ✅ Ya disponible
 
 export const seedComments = async (): Promise<void> => {
   try {

@@ -10,7 +10,7 @@ import sequelize from '../database/database';
 // ✅ Importar todos los modelos para que se registren
 import { User } from '../models/User';
 import { Comment } from '../models/Comment';
-import Fossil from '../models/GobModelPost';
+import Fossil from '../models/Posts';
 import { Like } from '../models/Like';
 
 // Cargar variables de entorno

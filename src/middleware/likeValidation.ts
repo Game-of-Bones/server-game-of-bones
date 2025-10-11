@@ -4,7 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import Fossil from '../models/GobModelPost';
+import Fossil from '../models/Posts';
 import { Like } from '../models/Like';
 
 /**

@@ -165,7 +165,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> {
   // RELACIONES (LAZY LOADING)
   // ============================================
 
-  @HasMany(() => require('./GobModelPost').default, {
+  @HasMany(() => require('./Posts').default, {
     foreignKey: 'author_id',
     as: 'posts'
   })

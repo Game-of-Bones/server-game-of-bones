@@ -4,7 +4,7 @@ import app from '../app';
 import sequelize from '../database/database';
 import { User } from '../models/User';
 import { Comment } from '../models/Comment';
-import Fossil from '../models/GobModelPost';
+import Fossil from '../models/Posts';
 import bcrypt from 'bcrypt';
 
 describe('Comments API Tests', () => {

@@ -84,7 +84,7 @@ export class Like extends Model<LikeAttributes, LikeCreationAttributes> {
 
   @SqComment('ID del post al que se le dio like')
   @AllowNull(false)
-  @ForeignKey(() => require('./GobModelPost').default)
+  @ForeignKey(() => require('./Posts').default)
   @Column(DataType.BIGINT.UNSIGNED) // ✅ CORREGIDO: Era INTEGER.UNSIGNED
   public post_id!: number;
 
@@ -111,7 +111,7 @@ export class Like extends Model<LikeAttributes, LikeCreationAttributes> {
   })
   public user?: any;
 
-  @BelongsTo(() => require('./GobModelPost').default, {
+  @BelongsTo(() => require('./Posts').default, {
     foreignKey: 'post_id',
     as: 'post'
   })

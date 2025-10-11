@@ -7,7 +7,7 @@
 import express from 'express';
 import authRouter from './routes/auth.routes';
 import usersRouter from './routes/users.routes';
-import fossilRoutes from './routes/GobRoutesPost';
+import fossilRoutes from './routes/posts';
 import { createCommentsRouter } from './routes/comments';
 import likesRouter from './routes/likes';
 

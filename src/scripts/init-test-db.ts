@@ -9,7 +9,7 @@
  * 4. Ejecuta los seeders de test
  * 
  * Uso:
- *   npm run db:init:test
+ *   npm run test:db
  */
 
 import { config } from 'dotenv';
@@ -18,11 +18,11 @@ import { Sequelize } from 'sequelize';
 // Cargar variables de entorno
 config();
 
-// Forzar NODE_ENV a test para este script
+// Forzar NODE_ENV a test
 process.env.NODE_ENV = 'test';
 
 const initTestDatabase = async () => {
-  // Conexión root para crear/eliminar la base de datos
+  // Conexión root para crear/eliminar la BD
   const rootConnection = new Sequelize({
     host: process.env.DB_TEST_HOST || process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_TEST_PORT || process.env.DB_PORT || '3306'),
@@ -33,24 +33,28 @@ const initTestDatabase = async () => {
   });
 
   try {
+    console.log('\n🧪 ========================================');
+    console.log('🧪 INICIALIZANDO BD DE TEST');
+    console.log('🧪 ========================================\n');
+
     console.log('🔧 Conectando al servidor MySQL...');
     await rootConnection.authenticate();
     console.log('✅ Conectado al servidor MySQL');
 
-    // Obtener nombre de la BD de test
     const dbName = process.env.DB_TEST_NAME || 'game_of_bones_app_test';
 
-    // Eliminar base de datos si existe
-    console.log(`🗑️  Eliminando base de datos ${dbName} si existe...`);
+    // Eliminar BD si existe
+    console.log(`\n🗑️  Eliminando BD ${dbName} si existe...`);
     await rootConnection.query(`DROP DATABASE IF EXISTS \`${dbName}\`;`);
-    console.log('✅ Base de datos eliminada (si existía)');
+    console.log('✅ BD eliminada (si existía)');
 
-    // Crear nueva base de datos
-    console.log(`📦 Creando base de datos ${dbName}...`);
-    await rootConnection.query(`CREATE DATABASE \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-    console.log('✅ Base de datos de test creada exitosamente');
+    // Crear BD
+    console.log(`\n📦 Creando BD ${dbName}...`);
+    await rootConnection.query(
+      `CREATE DATABASE \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+    );
+    console.log('✅ BD de test creada');
 
-    // Cerrar conexión root
     await rootConnection.close();
 
     // ============================================
@@ -58,41 +62,40 @@ const initTestDatabase = async () => {
     // ============================================
     console.log('\n📊 Sincronizando modelos...');
 
-    // Importar sequelize configurado (ya detectará NODE_ENV=test)
     const sequelize = (await import('../database/database')).default;
 
-    // Sincronizar modelos (crear tablas)
     await sequelize.sync({ force: true });
-    console.log('✅ Tablas creadas exitosamente');
+    console.log('✅ Tablas creadas');
 
     // ============================================
-    // Ejecutar seeders (opcional)
+    // Ejecutar seeders
     // ============================================
-    console.log('\n🌱 Ejecutando seeders...');
+    console.log('\n🌱 Ejecutando seeders de test...');
     try {
-      const { default: runAllSeeders } = await import('../script/runAllSeeders');
+      // ✅ RUTA CORREGIDA: src/scripts/runAllSeeders.ts
+      const { default: runAllSeeders } = await import('./runAllSeeders');
       await runAllSeeders();
-      console.log('✅ Seeders ejecutados correctamente');
+      console.log('✅ Seeders ejecutados');
     } catch (error: any) {
       if (error.code === 'MODULE_NOT_FOUND') {
-        console.log('ℹ️  No se encontraron seeders (opcional)');
+        console.log('ℹ️  No se encontraron seeders');
       } else {
         console.warn('⚠️  Error ejecutando seeders:', error.message);
       }
     }
 
-    // Cerrar conexión
     await sequelize.close();
-    console.log('✅ Conexión cerrada');
 
-    console.log('\n🎉 Base de datos de test inicializada correctamente');
-    console.log(`📍 Nombre de la base de datos: ${dbName}`);
+    console.log('\n🎉 ========================================');
+    console.log('🎉 BD DE TEST LISTA');
+    console.log('🎉 ========================================');
+    console.log(`📍 BD: ${dbName}`);
     console.log('\n💡 Próximos pasos:');
-    console.log('  1. npm test         - Ejecutar tests automáticos');
-    console.log('  2. npm run dev:test - Levantar servidor con BD de test\n');
+    console.log('  npm test         → Ejecutar tests');
+    console.log('  npm run test:server → Levantar servidor con BD test\n');
 
   } catch (error) {
-    console.error('❌ Error al inicializar la base de datos de test:', error);
+    console.error('❌ Error al inicializar la BD de test:', error);
     throw error;
   }
 };

@@ -6,7 +6,7 @@
 import { Request, Response } from 'express';
 import { Like } from '../models/Like';
 import { User } from '../models/User';
-import Fossil from '../models/GobModelPost';
+import Fossil from '../models/Posts';
 
 /**
  * Toggle Like (Dar o quitar like)

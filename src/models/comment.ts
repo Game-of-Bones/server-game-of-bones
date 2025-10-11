@@ -73,7 +73,7 @@ export class Comment extends Model<CommentAttributes, CommentCreationAttributes>
 
     @SqComment('ID del post al que pertenece el comentario')
     @AllowNull(false)
-    @ForeignKey(() => require('./GobModelPost').default)
+    @ForeignKey(() => require('./Posts').default)
     @Column(DataType.BIGINT.UNSIGNED) // ✅ CORREGIDO: Era INTEGER.UNSIGNED
     public post_id!: number;
 
@@ -111,7 +111,7 @@ export class Comment extends Model<CommentAttributes, CommentCreationAttributes>
     // RELACIONES (LAZY LOADING)
     // ============================================
 
-    @BelongsTo(() => require('./GobModelPost').default, {
+    @BelongsTo(() => require('./Posts').default, {
         foreignKey: 'post_id',
         as: 'post'
     })
