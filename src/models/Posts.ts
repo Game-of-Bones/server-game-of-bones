@@ -14,7 +14,7 @@ import {
   DeletedAt,
 } from "sequelize-typescript";
 import { Optional } from "sequelize";
-import { User } from "./User"; 
+import { User } from "./User";
 
 export type FossilType =
   | "bones_teeth"
@@ -56,7 +56,7 @@ interface PostCreationAttributes
     | "status"
     | "source"
     | "deletedAt"
-  > {}
+  > { }
 
 @Table({
   tableName: "post",
@@ -67,8 +67,8 @@ interface PostCreationAttributes
 export class Post extends Model<PostAttributes, PostCreationAttributes> {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.BIGINT)
-  id!: number;
+  @Column(DataType.BIGINT.UNSIGNED)
+  declare id: number;
 
   @AllowNull(false)
   @Column(DataType.STRING)
@@ -112,8 +112,8 @@ export class Post extends Model<PostAttributes, PostCreationAttributes> {
 
   @ForeignKey(() => User)
   @AllowNull(false)
-  @Column(DataType.BIGINT)
-  author_id!: number;
+  @Column(DataType.BIGINT.UNSIGNED)
+  declare author_id: number;
 
   @AllowNull(false)
   @Default("draft")
