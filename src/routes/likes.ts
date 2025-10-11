@@ -5,6 +5,7 @@
 
 import { Router } from 'express';
 import {
+  getAllLikes,
   toggleLike,
   getLikesByPost,
   getLikesByUser,
@@ -22,6 +23,15 @@ export function createLikesRouter(): Router {
   // ============================================
   // RUTAS PÚBLICAS
   // ============================================
+
+  /**
+   * GET /likes
+   * Obtener todos los likes (con paginación)
+   */
+  router.get(
+    '/likes',
+    getAllLikes
+  );
 
   /**
    * GET /posts/:postId/likes

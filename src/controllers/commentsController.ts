@@ -1,7 +1,59 @@
 // src/controllers/commentsController.ts
 import { Request, Response } from 'express';
-import { Comment } from '../models/Comment';  // ✅ CORREGIDO: Desde models directamente
+import { Comment } from '../models/Comment';
 import { User } from '../models/User';
+import Fossil from '../models/Posts';
+
+/**
+ * Obtener TODOS los comentarios (sin filtrar por post)
+ * GET /gameofbones/comments
+ */
+export const getAllComments = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const total = await Comment.count();
+
+    const comments = await Comment.findAll({
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['id', 'username', 'email']
+        },
+        {
+          model: Fossil,
+          as: 'post',
+          attributes: ['id', 'title', 'summary']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: Number(limit),
+      offset
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        comments,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Error al obtener todos los comentarios:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener comentarios',
+      error: error.message
+    });
+  }
+};
 
 /**
  * Crear un nuevo comentario
@@ -42,6 +94,10 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+/**
+ * Obtener comentarios de un post específico
+ * GET /gameofbones/posts/:postId/comments
+ */
 export const getCommentsByPost = async (req: Request, res: Response): Promise<void> => {
   try {
     const { postId } = req.params;
@@ -73,6 +129,10 @@ export const getCommentsByPost = async (req: Request, res: Response): Promise<vo
   }
 };
 
+/**
+ * Obtener un comentario por ID
+ * GET /gameofbones/comments/:id
+ */
 export const getCommentById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -109,6 +169,10 @@ export const getCommentById = async (req: Request, res: Response): Promise<void>
   }
 };
 
+/**
+ * Actualizar un comentario
+ * PUT /gameofbones/comments/:id
+ */
 export const updateComment = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -150,6 +214,10 @@ export const updateComment = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+/**
+ * Eliminar un comentario
+ * DELETE /gameofbones/comments/:id
+ */
 export const deleteComment = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -189,6 +257,10 @@ export const deleteComment = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+/**
+ * Obtener comentarios de un usuario
+ * GET /gameofbones/users/:userId/comments
+ */
 export const getCommentsByUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;

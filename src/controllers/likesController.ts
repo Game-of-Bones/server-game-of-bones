@@ -9,6 +9,56 @@ import { User } from '../models/User';
 import Fossil from '../models/Posts';
 
 /**
+ * Obtener TODOS los likes (sin filtrar por post)
+ * GET /gameofbones/likes
+ */
+export const getAllLikes = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const total = await Like.count();
+
+    const likes = await Like.findAll({
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'email']
+        },
+        {
+          model: Fossil,
+          as: 'post',
+          attributes: ['id', 'title', 'summary', 'image_url']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: Number(limit),
+      offset
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        likes,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error en getAllLikes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener todos los likes'
+    });
+  }
+};
+
+/**
  * Toggle Like (Dar o quitar like)
  * POST /posts/:postId/like
  */
@@ -65,7 +115,7 @@ export const toggleLike = async (req: Request, res: Response): Promise<void> => 
 };
 
 /**
- * Obtener likes de un post
+ * Obtener likes de un post específico
  * GET /posts/:postId/likes
  */
 export const getLikesByPost = async (req: Request, res: Response): Promise<void> => {
