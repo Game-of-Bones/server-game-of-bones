@@ -9,7 +9,7 @@ dotenv.config();
 
 import app, { logServerBanner } from './app';
 import sequelize, { testConnection } from './database/database';
-import './server'; // ✅ Importar modelos para que se registren automáticamente
+import './models'; // ✅ Importar modelos para que se registren automáticamente
 
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -43,7 +43,8 @@ const startServer = async () => {
     if (NODE_ENV === 'development') {
       await sequelize.sync({ alter: true }); // Ajusta tablas sin borrar datos
     } else if (NODE_ENV === 'test') {
-      await sequelize.sync({ force: true }); // Recrea tablas en tests
+      // En test NO usamos force para que no borre datos si ya existen
+      await sequelize.sync({ alter: false }); // Solo crea tablas faltantes
     } else {
       await sequelize.sync(); // Solo crea tablas faltantes en producción
     }
@@ -73,12 +74,39 @@ const startServer = async () => {
       }
 
       console.log('\n💡 Endpoints disponibles:');
-      console.log('   POST   /gameofbones/auth/register');
-      console.log('   POST   /gameofbones/auth/login');
-      console.log('   GET    /gameofbones/users');
-      console.log('   GET    /gameofbones/api/fossils');
-      console.log('   GET    /gameofbones/posts/:postId/comments');
-      console.log('   POST   /gameofbones/api/posts/:postId/like');
+      console.log('   📝 AUTH:');
+      console.log('      POST   /gameofbones/auth/register');
+      console.log('      POST   /gameofbones/auth/login');
+      console.log('');
+      console.log('   👥 USERS:');
+      console.log('      GET    /gameofbones/users');
+      console.log('      GET    /gameofbones/users/:id');
+      console.log('      PUT    /gameofbones/users/:id');
+      console.log('      DELETE /gameofbones/users/:id');
+      console.log('      PATCH  /gameofbones/users/:id/role');
+      console.log('      GET    /gameofbones/users/:userId/comments');
+      console.log('      GET    /gameofbones/users/:userId/likes');
+      console.log('');
+      console.log('   📰 POSTS:');
+      console.log('      GET    /gameofbones/posts');
+      console.log('      POST   /gameofbones/posts');
+      console.log('      GET    /gameofbones/posts/:id');
+      console.log('      PUT    /gameofbones/posts/:id');
+      console.log('      DELETE /gameofbones/posts/:id');
+      console.log('      GET    /gameofbones/posts/:postId/comments');
+      console.log('      POST   /gameofbones/posts/:postId/comments');
+      console.log('      GET    /gameofbones/posts/:postId/likes');
+      console.log('      POST   /gameofbones/posts/:postId/like');
+      console.log('      GET    /gameofbones/posts/:postId/like/check');
+      console.log('');
+      console.log('   💬 COMMENTS:');
+      console.log('      GET    /gameofbones/comments');
+      console.log('      GET    /gameofbones/comments/:id');
+      console.log('      PUT    /gameofbones/comments/:id');
+      console.log('      DELETE /gameofbones/comments/:id');
+      console.log('');
+      console.log('   ❤️  LIKES:');
+      console.log('      GET    /gameofbones/likes');
       console.log('');
     });
 

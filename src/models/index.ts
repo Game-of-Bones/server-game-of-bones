@@ -8,13 +8,13 @@ import sequelize from '../database/database';
 
 // Importar seeders de desarrollo
 import { seedUsers as seedUsersDev } from '../database/seeders/development/01-users';
-import { seedFossils as seedFossilsDev } from '../database/seeders/development/02-fossils';
+import { seedPosts as seedFossilsDev } from '../database/seeders/development/02-posts';
 import { seedComments as seedCommentsDev } from '../database/seeders/development/03-comments';
 import { seedLikes as seedLikesDev } from '../database/seeders/development/04-likes';
 
 // Importar seeders de test
 import { seedUsers as seedUsersTest } from '../database/seeders/test/01-users';
-import { seedFossils as seedFossilsTest } from '../database/seeders/test/02-fossils';
+import { seedPosts as seedFossilsTest } from '../database/seeders/test/02-posts';
 import { seedComments as seedCommentsTest } from '../database/seeders/test/03-comments';
 import { seedLikes as seedLikesTest } from '../database/seeders/test/04-likes';
 

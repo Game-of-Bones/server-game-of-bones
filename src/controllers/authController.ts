@@ -9,7 +9,7 @@ import { User, CreateUserDTO, LoginDTO } from '../models/User';
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, email, password }: CreateUserDTO = req.body;
+    const { username, email, password, role }: CreateUserDTO & { role?: 'admin' | 'user' } = req.body;
 
     // Validaciones básicas
     if (!username || !email || !password) {
@@ -64,12 +64,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     // Hashear contraseña
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // ✅ CORRECCIÓN: Usar el role del body, por defecto 'user'
+    const userRole = role === 'admin' ? 'admin' : 'user';
+
     // Crear usuario (Sequelize)
     const user = await User.create({
       username,
       email,
       password_hash: hashedPassword,
-      role: 'user'
+      role: userRole  // ← Ahora respeta el role enviado
     });
 
     // Generar token JWT

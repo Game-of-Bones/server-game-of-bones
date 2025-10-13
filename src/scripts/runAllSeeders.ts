@@ -19,12 +19,12 @@ export const runAllSeeders = async (): Promise<void> => {
       // SEEDERS DE TEST
       // ============================================
       const { seedUsers } = await import('../database/seeders/test/01-users');
-      const { seedFossils } = await import('../database/seeders/test/02-fossils');
+      const { seedPosts } = await import('../database/seeders/test/02-posts');
       const { seedComments } = await import('../database/seeders/test/03-comments');
       const { seedLikes } = await import('../database/seeders/test/04-likes');
 
       await seedUsers();
-      await seedFossils();
+      await seedPosts();
       await seedComments();
       await seedLikes();
 
@@ -33,12 +33,12 @@ export const runAllSeeders = async (): Promise<void> => {
       // SEEDERS DE DEVELOPMENT
       // ============================================
       const { seedUsers } = await import('../database/seeders/development/01-users');
-      const { default: seedFossils } = await import('../database/seeders/development/02-fossils');
+      const { default: seedPosts } = await import('../database/seeders/development/02-posts');
       const { seedComments } = await import('../database/seeders/development/03-comments');
       const { seedLikes } = await import('../database/seeders/development/04-likes');
 
       await seedUsers();
-      await seedFossils();
+      await seedPosts();
       await seedComments();
       await seedLikes();
     }

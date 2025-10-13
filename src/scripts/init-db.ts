@@ -16,7 +16,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import sequelize, { testConnection, syncDatabase } from '../database/database';
-import { runAllSeeders } from '../script/runAllSeeders';
+import { runAllSeeders } from './runAllSeeders';
 
 // ============================================
 // FUNCIÓN PRINCIPAL
