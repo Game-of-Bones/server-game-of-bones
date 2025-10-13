@@ -4,13 +4,17 @@ import {
   getAllPosts, 
   getPostById, 
   updatePost, 
-  deletePost 
+  deletePost,
+  getPostsForMap // ← AÑADIR esta línea
 } from "../controllers/postsController";
 
 const router = Router();
 
 // 🔹 Ruta de prueba antes de /:id
 router.get("/test", (req, res) => res.send("✅ Ruta de publicaciones activa"));
+
+// 🗺️ AÑADIR esta ruta ANTES de /:id
+router.get("/map", getPostsForMap);
 
 // CRUD
 router.post("/", createPost);

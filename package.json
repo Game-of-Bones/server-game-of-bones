@@ -7,30 +7,25 @@
     "// ========== 🚀 INICIO RÁPIDO ==========": "",
     "dev": "nodemon --exec ts-node src/server.ts",
     "start": "node dist/server.js",
-    
     "// ========== 🗄️ BASE DE DATOS - DESARROLLO ==========": "",
     "db:create": "ts-node src/scripts/init-db.ts",
     "db:seed": "ts-node src/scripts/runAllSeeders.ts",
     "db:reset": "ts-node src/scripts/clean-db.ts && ts-node src/scripts/init-db.ts --force",
     "db:fresh": "npm run db:reset && npm run db:seed",
-    
     "// ========== 🗄️ BASE DE DATOS - TEST ==========": "",
     "db:test:create": "cross-env NODE_ENV=test ts-node src/scripts/init-db.ts",
     "db:test:seed": "cross-env NODE_ENV=test ts-node src/scripts/runAllSeeders.ts",
     "db:test:reset": "cross-env NODE_ENV=test ts-node src/scripts/clean-db.ts && cross-env NODE_ENV=test ts-node src/scripts/init-db.ts --force",
     "db:test:fresh": "npm run db:test:reset && npm run db:test:seed",
-    
     "// ========== 🧪 TESTING ==========": "",
     "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage",
     "test:db": "cross-env NODE_ENV=test ts-node src/scripts/init-test-db.ts",
     "test:server": "cross-env NODE_ENV=test nodemon --exec ts-node src/server.ts",
-    
     "// ========== 🏗️ PRODUCCIÓN ==========": "",
     "build": "tsc",
     "prod": "npm run build && npm start",
-    
     "// ========== 🛠️ DESARROLLO ==========": "",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -56,6 +51,7 @@
   },
   "homepage": "https://github.com/Game-of-Bones/server-game-of-bones#readme",
   "dependencies": {
+    "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
@@ -69,6 +65,7 @@
     "validator": "^13.15.15"
   },
   "devDependencies": {
+    "@types/axios": "^0.9.36",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",

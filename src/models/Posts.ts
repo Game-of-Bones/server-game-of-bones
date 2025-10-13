@@ -91,6 +91,12 @@ export class Post extends Model<PostAttributes, PostCreationAttributes> {
   @Column(DataType.STRING(255))
   location?: string | null;
 
+  @Column(DataType.DECIMAL(10, 8))
+  latitude?: number | null;
+
+  @Column(DataType.DECIMAL(11, 8))
+  longitude?: number | null;
+
   @Column(DataType.STRING(255))
   paleontologist?: string | null;
 
