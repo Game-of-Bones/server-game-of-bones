@@ -5,7 +5,6 @@ import { createCommentsRouter } from "./routes/comments";
 // import postsRouter from "./routes/posts";
 // import usersRouter from "./routes/users";
 import likesRouter from "./routes/likes";
-import fossilRoutes from "./routes/GobRoutesPost"; // 👈 Añadido
 
 const router = express.Router();
 
@@ -18,7 +17,7 @@ const router = express.Router();
 router.use('/auth', authRouter);
 
 // Rutas de comentarios (Comment)
-// Rutas: 
+// Rutas:
 // - GET/POST /gameofbones/posts/:postId/comments
 // - GET/PUT/DELETE /gameofbones/comments/:id
 // - GET /gameofbones/users/:userId/comments

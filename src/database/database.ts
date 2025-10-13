@@ -1,12 +1,16 @@
 /**
- * CONFIGURACIÓN DE SEQUELIZE
- * 
+ * CONFIGURACIÓN DE SEQUELIZE CON DECORADORES
+ *
  * Configura la conexión a la base de datos MySQL
- * usando variables de entorno
+ * usando sequelize-typescript
  */
 
-import { Sequelize } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
+import { User } from '../models/User';
+import { Post } from '../models/Post';
+import { Comment } from '../models/Comment';
+import { Like } from '../models/Like';
 
 dotenv.config();
 
@@ -15,7 +19,7 @@ const isTest = process.env.NODE_ENV === 'test';
 
 // Configuración según el entorno
 const config = {
-  database: isTest 
+  database: isTest
     ? (process.env.DB_TEST_NAME || 'game_of_bones_app_test')
     : (process.env.DB_NAME || 'game_of_bones_app'),
   username: isTest
@@ -25,8 +29,8 @@ const config = {
     ? (process.env.DB_TEST_PASSWORD || process.env.DB_PASSWORD || '')
     : (process.env.DB_PASSWORD || ''),
   host: isTest
-    ? (process.env.DB_TEST_HOST || process.env.DB_HOST || 'localhost')
-    : (process.env.DB_HOST || 'localhost'),
+    ? (process.env.DB_TEST_HOST || process.env.DB_HOST || '127.0.0.1')
+    : (process.env.DB_HOST || '127.0.0.1'),
   port: isTest
     ? parseInt(process.env.DB_TEST_PORT || process.env.DB_PORT || '3306')
     : parseInt(process.env.DB_PORT || '3306'),
@@ -39,26 +43,27 @@ const sequelize = new Sequelize({
   host: config.host,
   port: config.port,
   dialect: 'mysql',
-  
-  // Configuración de pool de conexiones
+
+  // Modelos con decoradores
+  models: [User, Post, Comment, Like],
+
+  // Pool de conexiones
   pool: {
     max: isTest ? 5 : 10,
     min: 0,
     acquire: 30000,
     idle: 10000
   },
-  
-  // Logging (desactiva en test y producción)
+
+  // Logging
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
-  
-  // Timezone
-  timezone: '+00:00',
-  
-  // Define opciones por defecto para todos los modelos
+
+  // Configuración por defecto de modelos
   define: {
     timestamps: true,
     underscored: true,
-    freezeTableName: true
+    freezeTableName: true,
+    paranoid: true
   }
 });
 
