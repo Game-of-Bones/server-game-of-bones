@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import Fossil, { FossilType, Status } from "../models/GobModelPost";
+import { Post } from "../models/Post";
 
 // Definimos la interfaz para el body de la petición
 interface FossilRequestBody {
