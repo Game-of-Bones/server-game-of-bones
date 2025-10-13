@@ -2,12 +2,12 @@
  * PUNTO DE ENTRADA DEL SERVIDOR
  * * Inicializa y arranca el servidor Express
  */
-
+import 'reflect-metadata';
 import dotenv from 'dotenv';
 dotenv.config();
 
 // Se importa la función logServerBanner junto con la instancia de app
-import app, { logServerBanner } from './app'; 
+import app, { logServerBanner } from './app';
 import sequelize, { testConnection } from './database/database';
 import './models'; // Importar modelos para registrarlos
 
@@ -26,7 +26,7 @@ const startServer = async () => {
   try {
     // 1. Probar conexión a la base de datos
     const isConnected = await testConnection();
-    
+
     if (!isConnected) {
       console.error('❌ No se pudo conectar a la base de datos');
       process.exit(1);
@@ -36,13 +36,13 @@ const startServer = async () => {
     console.log('🔗 Configurando asociaciones de modelos...');
     console.log('✅ Asociaciones preparadas (comentadas hasta modelos existentes)');
     console.log('✅ Asociaciones de modelos configuradas');
-    
+
     await sequelize.sync({ alter: NODE_ENV === 'development' });
     console.log('✅ Modelos sincronizados con la base de datos\n');
 
     // 3. Iniciar servidor
     app.listen(PORT, () => {
-      
+
       // 🦴 Mostrar el banner ASCII al iniciar el servidor 🦴
       logServerBanner(PORT);
 
@@ -52,7 +52,7 @@ const startServer = async () => {
       console.log(`🗄️  Base de datos: ${getDbName()}`);
       console.log('🔗 Health check:', `http://localhost:${PORT}/health`);
       console.log('🔗 API:', `http://localhost:${PORT}/gameofbones`);
-      
+
       // Emoji especial según el ambiente
       if (NODE_ENV === 'test') {
         console.log('🧪 Modo TEST activado');
