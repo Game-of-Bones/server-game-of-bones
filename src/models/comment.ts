@@ -1,99 +1,120 @@
-import { Model, DataTypes, Optional } from 'sequelize';
-import sequelize from '../database/database';
+/**
+ * COMMENT MODEL
+ *
+ * Modelo de comentarios en posts
+ * Soporta soft delete y relaciones con User y Post
+ */
 
-// --- 1. Definición de Tipos ---
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
+import { User } from './User';
+import { Post } from './Post';
 
-// Atributos que existen en la tabla SQL
-export interface CommentAttributes {
-  id: number;           
-  post_id: number;      
-  user_id: number;      
+// ============================================
+// INTERFACES (DTOs)
+// ============================================
+
+export interface CreateCommentDTO {
   content: string;
-  created_at?: Date;
-  updated_at?: Date;
-  deleted_at?: Date | null;
+  post_id: number;
+  user_id: number;
 }
 
-// Atributos para la creación
-export interface CommentCreationAttributes extends Optional<CommentAttributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
-
-// --- 2. Implementación del Modelo ---
-
-export class Comment extends Model<CommentAttributes, CommentCreationAttributes> implements CommentAttributes {
-  public id!: number;
-  public post_id!: number;
-  public user_id!: number;
-  public content!: string;
-
-  // Timestamps
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date;
-  public readonly deleted_at!: Date | null;
+export interface UpdateCommentDTO {
+  content?: string;
 }
 
-// --- 3. Inicialización del Esquema ---
+export interface CommentResponse {
+  id: number;
+  content: string;
+  post_id: number;
+  user_id: number;
+  created_at: Date;
+  updated_at: Date;
+  author?: {
+    id: number;
+    username: string;
+    email: string;
+  };
+}
 
-Comment.init(
-  {
-      id: {
-          type: DataTypes.INTEGER.UNSIGNED, 
-          primaryKey: true,
-          autoIncrement: true,
-          comment: 'Identificador único del comentario',
+// ============================================
+// MODEL
+// ============================================
+
+@Table({
+  tableName: 'comments',
+  timestamps: true,
+  paranoid: true,
+  underscored: true,
+  indexes: [
+    { name: 'idx_comments_post_id', fields: ['post_id'] },
+    { name: 'idx_comments_user_id', fields: ['user_id'] },
+    { name: 'idx_comments_created_at', fields: ['created_at'] },
+  ],
+})
+export class Comment extends Model {
+  @Column({
+    type: DataType.BIGINT,
+    primaryKey: true,
+    autoIncrement: true,
+  })
+  id!: number;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: false,
+    validate: {
+      notEmpty: {
+        msg: 'El contenido no puede estar vacío',
       },
-      post_id: {
-          type: DataTypes.INTEGER.UNSIGNED, 
-          allowNull: false,
-          comment: 'ID del post al que pertenece el comentario',
+      len: {
+        args: [1, 5000],
+        msg: 'El comentario debe tener entre 1 y 5000 caracteres',
       },
-      user_id: {
-          type: DataTypes.INTEGER.UNSIGNED, 
-          allowNull: false,
-          comment: 'ID del usuario que hizo el comentario',
-      },
-      content: {
-          type: DataTypes.TEXT,
-          allowNull: false,
-          comment: 'Contenido del comentario',
-          validate: {
-              notEmpty: {
-                  msg: 'El contenido no puede estar vacío'
-              },
-              len: {
-                  args: [1, 5000],
-                  msg: 'El comentario debe tener entre 1 y 5000 caracteres'
-              }
-          }
-      },
-  },
-  {
-      sequelize,
-      tableName: 'comments',
-      modelName: 'Comment',
-      timestamps: true,
-      underscored: true,
-      paranoid: true,
-      deletedAt: 'deleted_at',
-      createdAt: 'created_at',
-      updatedAt: 'updated_at',
-      
-      charset: 'utf8mb4',
-      collate: 'utf8mb4_unicode_ci',
-      
-      // Índices para mejorar rendimiento
-      indexes: [
-          {
-              name: 'idx_comments_post_id',
-              fields: ['post_id']
-          },
-          {
-              name: 'idx_comments_user_id',
-              fields: ['user_id']
-          },
-          {
-              name: 'idx_comments_created_at',
-              fields: ['created_at']
-          }
-      ]
+    },
+  })
+  content!: string;
+
+  @ForeignKey(() => Post)
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: false,
+  })
+  post_id!: number;
+
+  @ForeignKey(() => User)
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: false,
+  })
+  user_id!: number;
+
+  // ============================================
+  // RELACIONES
+  // ============================================
+
+  @BelongsTo(() => Post)
+  post!: Post;
+
+  @BelongsTo(() => User)
+  author!: User;
+
+  // ============================================
+  // MÉTODOS DE INSTANCIA
+  // ============================================
+
+  toJSON(): CommentResponse {
+    const values = { ...this.get() };
+    delete values.deleted_at;
+    return values as CommentResponse;
   }
-);
+}
+
+export default Comment;

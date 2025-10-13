@@ -1,105 +1,28 @@
-// src/models/User.ts
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../database/database';
+/**
+ * USER MODEL
+ *
+ * Modelo de usuario con autenticación
+ * Roles: admin | user
+ */
 
-// Atributos del modelo User
-export interface UserAttributes {
-  id: number;
-  username: string;
-  email: string;
-  password_hash: string;
-  role: 'admin' | 'user';
-  created_at?: Date;
-  updated_at?: Date;
-  deleted_at?: Date | null;
-}
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  HasMany,
+  BeforeCreate,
+  BeforeUpdate,
+} from 'sequelize-typescript';
+import bcrypt from 'bcrypt';
+import { Post } from './Post';
+import { Comment } from './Comment';
+import { Like } from './Like';
 
-// Atributos opcionales al crear (id, timestamps)
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
+// ============================================
+// INTERFACES
+// ============================================
 
-// Clase del modelo
-export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
-  declare id: number;
-  declare username: string;
-  declare email: string;
-  declare password_hash: string;
-  declare role: 'admin' | 'user';
-  declare created_at: Date;
-  declare updated_at: Date;
-  declare deleted_at: Date | null;
-
-  // Timestamps automáticos
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
-}
-
-// Inicializar modelo
-User.init(
-  {
-    id: {
-      type: DataTypes.BIGINT,
-      primaryKey: true,
-      autoIncrement: true
-    },
-    username: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true,
-      validate: {
-        notEmpty: true,
-        len: [3, 50]
-      }
-    },
-    email: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-        notEmpty: true
-      }
-    },
-    password_hash: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      validate: {
-        notEmpty: true
-      }
-    },
-    role: {
-      type: DataTypes.ENUM('admin', 'user'),
-      allowNull: false,
-      defaultValue: 'user'
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      field: 'created_at'
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      field: 'updated_at'
-    },
-    deleted_at: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      field: 'deleted_at'
-    }
-  },
-  {
-    sequelize,
-    tableName: 'users',
-    timestamps: true,
-    paranoid: true, // Soft delete (usa deleted_at)
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-    deletedAt: 'deleted_at',
-    underscored: true
-  }
-);
-
-// DTOs (mantener las interfaces existentes)
 export interface CreateUserDTO {
   username: string;
   email: string;
@@ -123,4 +46,103 @@ export interface UserResponse {
 export interface AuthResponse {
   user: UserResponse;
   token: string;
+}
+
+// ============================================
+// MODEL
+// ============================================
+
+@Table({
+  tableName: 'users',
+  timestamps: true,
+  paranoid: true,
+  underscored: true,
+})
+export class User extends Model {
+  @Column({
+    type: DataType.BIGINT,
+    primaryKey: true,
+    autoIncrement: true,
+  })
+  id!: number;
+
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: false,
+    unique: true,
+    validate: {
+      notEmpty: true,
+      len: [3, 50],
+    },
+  })
+  username!: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true,
+      notEmpty: true,
+    },
+  })
+  email!: string;
+
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+    },
+  })
+  password_hash!: string;
+
+  @Column({
+    type: DataType.ENUM('admin', 'user'),
+    allowNull: false,
+    defaultValue: 'user',
+  })
+  role!: 'admin' | 'user';
+
+  // ============================================
+  // RELACIONES
+  // ============================================
+
+  @HasMany(() => Post)
+  posts!: Post[];
+
+  @HasMany(() => Comment)
+  comments!: Comment[];
+
+  @HasMany(() => Like)
+  likes!: Like[];
+
+  // ============================================
+  // HOOKS (Hasheo de contraseñas)
+  // ============================================
+
+  @BeforeCreate
+  @BeforeUpdate
+  static async hashPassword(user: User): Promise<void> {
+    // Solo hashear si la contraseña cambió
+    if (user.changed('password_hash')) {
+      const salt = await bcrypt.genSalt(12);
+      user.password_hash = await bcrypt.hash(user.password_hash, salt);
+    }
+  }
+
+  // ============================================
+  // MÉTODOS DE INSTANCIA
+  // ============================================
+
+  async comparePassword(password: string): Promise<boolean> {
+    return bcrypt.compare(password, this.password_hash);
+  }
+
+  toJSON(): UserResponse {
+    const values = { ...this.get() };
+    delete values.password_hash;
+    delete values.deleted_at;
+    return values as UserResponse;
+  }
 }

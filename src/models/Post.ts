@@ -1,22 +1,28 @@
+/**
+ * POST MODEL (Fossil Discoveries)
+ *
+ * Modelo de posts sobre descubrimientos paleontológicos
+ * Tipos de fósiles soportados: huesos, plantas, insectos, etc.
+ */
+
 import {
   Table,
   Column,
   Model,
   DataType,
-  PrimaryKey,
-  AutoIncrement,
-  AllowNull,
-  Default,
   ForeignKey,
   BelongsTo,
   HasMany,
-  CreatedAt,
-  UpdatedAt,
-  DeletedAt,
+  Default,
+  AllowNull,
 } from 'sequelize-typescript';
 import { User } from './User';
 import { Comment } from './Comment';
 import { Like } from './Like';
+
+// ============================================
+// TYPES
+// ============================================
 
 export type FossilType =
   | 'bones_teeth'
@@ -27,95 +33,185 @@ export type FossilType =
 
 export type PostStatus = 'draft' | 'published';
 
+// ============================================
+// INTERFACES (DTOs)
+// ============================================
+
+export interface CreatePostDTO {
+  title: string;
+  summary: string;
+  image_url?: string;
+  discovery_date?: Date;
+  location?: string;
+  paleontologist?: string;
+  fossil_type: FossilType;
+  geological_period?: string;
+  author_id: number;
+  status?: PostStatus;
+  source?: string;
+}
+
+export interface UpdatePostDTO {
+  title?: string;
+  summary?: string;
+  image_url?: string;
+  discovery_date?: Date;
+  location?: string;
+  paleontologist?: string;
+  fossil_type?: FossilType;
+  geological_period?: string;
+  status?: PostStatus;
+  source?: string;
+}
+
+export interface PostResponse {
+  id: number;
+  title: string;
+  summary: string;
+  image_url?: string;
+  discovery_date?: Date;
+  location?: string;
+  paleontologist?: string;
+  fossil_type: FossilType;
+  geological_period?: string;
+  author_id: number;
+  status: PostStatus;
+  source?: string;
+  created_at: Date;
+  updated_at: Date;
+  author?: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  comments_count?: number;
+  likes_count?: number;
+}
+
+// ============================================
+// MODEL
+// ============================================
+
 @Table({
-  tableName: 'posts', // ← Ahora consistente: posts en BD
+  tableName: 'posts',
   timestamps: true,
   paranoid: true,
   underscored: true,
 })
 export class Post extends Model {
-  @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.BIGINT)
+  @Column({
+    type: DataType.BIGINT,
+    primaryKey: true,
+    autoIncrement: true,
+  })
   id!: number;
 
-  @AllowNull(false)
-  @Column(DataType.STRING)
+  @Column({
+    type: DataType.STRING(255),
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [5, 255],
+    },
+  })
   title!: string;
 
-  @AllowNull(false)
-  @Column(DataType.TEXT)
+  @Column({
+    type: DataType.TEXT,
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [20, 5000],
+    },
+  })
   summary!: string;
 
   @AllowNull(true)
-  @Column(DataType.STRING(500))
-  image_url?: string | null;
+  @Column({
+    type: DataType.STRING(500),
+    validate: {
+      isUrl: true,
+    },
+  })
+  image_url?: string;
 
   @AllowNull(true)
   @Column(DataType.DATE)
-  discovery_date?: Date | null;
+  discovery_date?: Date;
 
   @AllowNull(true)
   @Column(DataType.STRING(255))
-  location?: string | null;
+  location?: string;
 
   @AllowNull(true)
   @Column(DataType.STRING(255))
-  paleontologist?: string | null;
+  paleontologist?: string;
 
-  // Este campo es específico para fósiles, pero el modelo sigue siendo Post
-  @AllowNull(false)
   @Default('bones_teeth')
-  @Column(
-    DataType.ENUM(
+  @Column({
+    type: DataType.ENUM(
       'bones_teeth',
       'shell_exoskeletons',
       'plant_impressions',
       'tracks_traces',
       'amber_insects'
-    )
-  )
+    ),
+    allowNull: false,
+  })
   fossil_type!: FossilType;
 
   @AllowNull(true)
   @Column(DataType.STRING(100))
-  geological_period?: string | null;
+  geological_period?: string;
 
   @ForeignKey(() => User)
-  @AllowNull(false)
-  @Column(DataType.BIGINT)
+  @Column({
+    type: DataType.BIGINT,
+    allowNull: false,
+  })
   author_id!: number;
 
-  @AllowNull(false)
   @Default('draft')
-  @Column(DataType.ENUM('draft', 'published'))
+  @Column({
+    type: DataType.ENUM('draft', 'published'),
+    allowNull: false,
+  })
   status!: PostStatus;
 
   @AllowNull(true)
   @Column(DataType.STRING(500))
-  source?: string | null;
+  source?: string;
 
-  @CreatedAt
-  @Column({ field: 'created_at' })
-  createdAt!: Date;
+  // ============================================
+  // RELACIONES
+  // ============================================
 
-  @UpdatedAt
-  @Column({ field: 'updated_at' })
-  updatedAt!: Date;
-
-  @DeletedAt
-  @Column({ field: 'deleted_at' })
-  deletedAt!: Date | null;
-
-  // Relaciones
-  @BelongsTo(() => User, { foreignKey: 'author_id', as: 'author' })
+  @BelongsTo(() => User)
   author!: User;
 
-  @HasMany(() => Comment, { foreignKey: 'post_id', as: 'comments' })
+  @HasMany(() => Comment)
   comments!: Comment[];
 
-  @HasMany(() => Like, { foreignKey: 'post_id', as: 'likes' })
+  @HasMany(() => Like)
   likes!: Like[];
+
+  // ============================================
+  // MÉTODOS DE INSTANCIA
+  // ============================================
+
+  async getLikesCount(): Promise<number> {
+    return await Like.count({ where: { post_id: this.id } });
+  }
+
+  async getCommentsCount(): Promise<number> {
+    return await Comment.count({ where: { post_id: this.id } });
+  }
+
+  toJSON(): PostResponse {
+    const values = { ...this.get() };
+    delete values.deleted_at;
+    return values as PostResponse;
+  }
 }
 
 export default Post;
