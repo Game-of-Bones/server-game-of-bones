@@ -1,73 +1,161 @@
+/**
+ * MIDDLEWARE DE AUTENTICACIÓN Y AUTORIZACIÓN
+ *
+ * Proporciona middlewares para:
+ * - Verificar tokens JWT
+ * - Validar roles (admin/user)
+ * - Validar ownership de recursos
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-
+import { jwtConfig } from '../config/jwt';
 
 /**
- * Middleware para verificar que el usuario está autenticado
- * Verifica el token JWT y añade la info del usuario al request
+ * Interfaz para el payload del JWT
+ */
+interface JwtPayload {
+  id: number;
+  email: string;
+  role: 'admin' | 'user';
+}
+
+/**
+ * Middleware para verificar el token JWT
+ * Extrae el usuario del token y lo agrega a req.user
  */
 export const verifyToken = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   try {
-    //console.log('🔍 NODE_ENV:', process.env.NODE_ENV); // <-- Añade esto
-    //console.log('🔍 Token recibido:', req.headers.authorization); // <-- Y esto
+    const authHeader = req.headers.authorization;
 
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!authHeader) {
+      res.status(401).json({
+        success: false,
+        message: 'Token no proporcionado',
+      });
+      return;
+    }
+
+    // El token viene en formato: "Bearer TOKEN"
+    const token = authHeader.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
-        error: 'Token no proporcionado'
+        message: 'Formato de token inválido',
       });
+      return;
     }
 
-    // En entorno de testing, aceptar cualquier token y autenticar como usuario 1
-    if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
-      //console.log('✅ Modo desarrollo - autenticando como usuario 1');
-      req.user = { id: 1, role: 'user' };
-      return next();
+    // Verificar y decodificar el token usando la config centralizada
+    const decoded = jwt.verify(token, jwtConfig.secret) as JwtPayload;
+
+    // Validar que el role es válido
+    if (decoded.role !== 'admin' && decoded.role !== 'user') {
+      res.status(401).json({
+        success: false,
+        message: 'Rol de usuario inválido',
+      });
+      return;
     }
 
-    // Verificar token JWT en producción/desarrollo
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-
-    // Añadir info del usuario al request
+    // Agregar información del usuario a la request
     req.user = {
       id: decoded.id,
-      role: decoded.role
+      email: decoded.email,
+      role: decoded.role,
     };
 
     next();
-  } catch (error) {
-    return res.status(401).json({
+  } catch (error: any) {
+    if (error.name === 'JsonWebTokenError') {
+      res.status(401).json({
+        success: false,
+        message: 'Token inválido',
+      });
+      return;
+    }
+
+    if (error.name === 'TokenExpiredError') {
+      res.status(401).json({
+        success: false,
+        message: 'Token expirado',
+      });
+      return;
+    }
+
+    res.status(500).json({
       success: false,
-      error: 'Token inválido o expirado'
+      message: 'Error al verificar token',
     });
   }
-}
+};
 
-/*Código MaricCarmen- probablemente se borrará  
-export const verifyToken = (
+/**
+ * Middleware para verificar que el usuario es administrador
+ * DEBE usarse DESPUÉS de verifyToken
+ */
+export const isAdmin = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
-  // Check if Authorization header exists
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    // No token provided - return 401
-    res.status(401).json({ message: "No token provided" });
+): void => {
+  if (!req.user) {
+    res.status(401).json({
+      success: false,
+      message: 'Usuario no autenticado',
+    });
     return;
   }
 
-  // For development and testing, we'll attach a dummy user to the request.
-  // The test user from schema.test.sql has id: 1.
-  req.auth = { id: 1 };
+  if (req.user.role !== 'admin') {
+    res.status(403).json({
+      success: false,
+      message: 'Acceso denegado. Se requieren permisos de administrador',
+    });
+    return;
+  }
+
   next();
 };
 
-*/
+/**
+ * Middleware para verificar que el usuario es el propietario del recurso o es admin
+ * Útil para endpoints como PUT /users/:id, DELETE /posts/:id
+ */
+export const isOwnerOrAdmin = (resourceIdParam: string = 'id') => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado',
+      });
+      return;
+    }
+
+    const resourceUserId = parseInt(req.params[resourceIdParam]);
+
+    if (isNaN(resourceUserId)) {
+      res.status(400).json({
+        success: false,
+        message: 'ID de recurso inválido',
+      });
+      return;
+    }
+
+    // Permitir si es admin o si es el propietario del recurso
+    if (req.user.role === 'admin' || req.user.id === resourceUserId) {
+      next();
+      return;
+    }
+
+    res.status(403).json({
+      success: false,
+      message: 'No tienes permiso para acceder a este recurso',
+    });
+  };
+};

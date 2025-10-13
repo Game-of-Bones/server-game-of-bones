@@ -1,11 +1,10 @@
 /**
  * EXTENSIÓN DE TIPOS DE EXPRESS
- * 
- * Este archivo extiende los tipos de Express para añadir
- * propiedades personalizadas al objeto Request.
- * 
- * El middleware authenticate añade req.user, pero TypeScript
- * no lo sabe por defecto. Este archivo se lo indica.
+ *
+ * Extiende el tipo Request de Express para incluir propiedades personalizadas
+ * añadidas por middlewares de autenticación.
+ *
+ * req.user es añadido por el middleware authenticate() después de verificar el JWT
  */
 
 declare global {
@@ -13,25 +12,12 @@ declare global {
     interface Request {
       user?: {
         id: number;
-        role: string;
+        email: string;
+        role: 'admin' | 'user';
       };
     }
   }
 }
 
-// Esta línea es CRÍTICA - hace que el archivo sea un módulo
+// Esta línea es CRÍTICA - convierte el archivo en un módulo TypeScript
 export {};
-
-/*Código MariCarmen- probablemente se actualizará/borrará
-// This file extends the Express Request interface to include the 'auth' property.
-
-declare global {
-  namespace Express {
-    interface Request {
-      auth: { id: number };
-    }
-  }
-}
-
-export {};
-*/

@@ -1,31 +1,36 @@
 /**
- * Middleware para validar la creación de comentarios
- * Se ejecuta ANTES de llegar al controller
+ * MIDDLEWARE DE VALIDACIÓN PARA COMENTARIOS
+ *
+ * Valida y sanitiza el contenido de comentarios antes de procesarlos
  */
+
 import { Request, Response, NextFunction } from 'express';
 import validator from 'validator';
 
+/**
+ * Validar la creación de un comentario
+ */
 export const validateCreateComment = (
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  const errors: string[] = [];
   const { content } = req.body;
 
-  // Validar que el contenido existe y es un string
+  // Validar que el contenido existe
   if (content === undefined || content === null) {
     res.status(400).json({
       success: false,
-      errors: ['El contenido es requerido']
+      message: 'El contenido es requerido',
     });
     return;
   }
 
+  // Validar que es string
   if (typeof content !== 'string') {
     res.status(400).json({
       success: false,
-      errors: ['El contenido debe ser texto']
+      message: 'El contenido debe ser texto',
     });
     return;
   }
@@ -33,51 +38,63 @@ export const validateCreateComment = (
   // Limpiar espacios
   const trimmedContent = content.trim();
 
-  // Validar que existe contenido
+  // Validar que no está vacío
   if (trimmedContent.length === 0) {
-    errors.push('El contenido no puede estar vacío');
-  }
-
-  // Validar longitud máxima
-  if (trimmedContent.length > 1000) {
-    errors.push('El contenido no puede exceder los 1000 caracteres');
-  }
-
-  if (errors.length > 0) {
     res.status(400).json({
       success: false,
-      errors
+      message: 'El contenido no puede estar vacío',
     });
     return;
   }
 
-  // Sanitizar HTML manteniendo URLs y comillas legibles
+  // Validar longitud mínima (opcional pero recomendado)
+  if (trimmedContent.length < 1) {
+    res.status(400).json({
+      success: false,
+      message: 'El comentario debe tener al menos 1 caracter',
+    });
+    return;
+  }
+
+  // Validar longitud máxima (debe coincidir con el modelo: 5000)
+  if (trimmedContent.length > 5000) {
+    res.status(400).json({
+      success: false,
+      message: 'El comentario no puede exceder los 5000 caracteres',
+    });
+    return;
+  }
+
+  // Sanitizar HTML para prevenir XSS
   req.body.content = validator.escape(trimmedContent);
 
   next();
 };
 
+/**
+ * Validar la actualización de un comentario
+ */
 export const validateUpdateComment = (
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  const errors: string[] = []; // Se agrega un array de errores
   const { content } = req.body;
 
-  // Validar que el contenido existe y es un string
+  // Validar que el contenido existe
   if (content === undefined || content === null) {
     res.status(400).json({
       success: false,
-      errors: ['El contenido es requerido'] // CAMBIO: 'error' a 'errors'
+      message: 'El contenido es requerido',
     });
     return;
   }
 
+  // Validar que es string
   if (typeof content !== 'string') {
     res.status(400).json({
       success: false,
-      errors: ['El contenido debe ser texto'] // CAMBIO: 'error' a 'errors'
+      message: 'El contenido debe ser texto',
     });
     return;
   }
@@ -85,25 +102,25 @@ export const validateUpdateComment = (
   // Limpiar espacios
   const trimmedContent = content.trim();
 
-  // Validar que existe contenido
+  // Validar que no está vacío
   if (trimmedContent.length === 0) {
     res.status(400).json({
       success: false,
-      errors: ['El contenido no puede estar vacío'] // CAMBIO: 'error' a 'errors'
+      message: 'El contenido no puede estar vacío',
     });
     return;
   }
 
-  // Validar longitud máxima
-  if (trimmedContent.length > 1000) {
+  // Validar longitud máxima (debe coincidir con el modelo: 5000)
+  if (trimmedContent.length > 5000) {
     res.status(400).json({
       success: false,
-      errors: ['El contenido no puede exceder los 1000 caracteres'] // CAMBIO: 'error' a 'errors'
+      message: 'El comentario no puede exceder los 5000 caracteres',
     });
     return;
   }
 
-  // Sanitizar HTML
+  // Sanitizar HTML para prevenir XSS
   req.body.content = validator.escape(trimmedContent);
 
   next();
