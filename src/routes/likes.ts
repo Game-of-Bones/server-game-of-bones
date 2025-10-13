@@ -1,19 +1,84 @@
-import express from "express";
+// src/routes/likes.ts
+/**
+ * RUTAS DE LIKES
+ */
+
+import { Router } from 'express';
 import {
-  getLikesByPostId,
+  getAllLikes,
   toggleLike,
-} from "../controllers/likesController";
-import { verifyToken } from "../middleware/auth";
+  getLikesByPost,
+  getLikesByUser,
+  checkUserLike
+} from '../controllers/likesController';
+import { verifyToken } from '../middleware/auth';
+import {
+  validateLikePost,
+  validateLikePagination
+} from '../middleware/likeValidation';
 
-const router = express.Router();
+export function createLikesRouter(): Router {
+  const router = Router();
 
-// Route to get the number of likes for a post
-// This is a public route, no authentication needed
-router.get("/api/posts/:postId/likes", getLikesByPostId);
+  // ============================================
+  // RUTAS PÚBLICAS
+  // ============================================
 
-// Route to add or remove a like from a post
-// This is a protected route, the user must be authenticated
-// The toggleLike controller handles both liking and unliking
-router.post("/api/posts/:postId/like", verifyToken, toggleLike);
+  /**
+   * GET /likes
+   * Obtener todos los likes (con paginación)
+   */
+  router.get(
+    '/likes',
+    getAllLikes
+  );
 
-export default router;
+  /**
+   * GET /posts/:postId/likes
+   * Obtener todos los likes de un post (con paginación)
+   */
+  router.get(
+    '/posts/:postId/likes',
+    validateLikePagination,
+    getLikesByPost
+  );
+
+  /**
+   * GET /users/:userId/likes
+   * Obtener todos los likes de un usuario
+   */
+  router.get(
+    '/users/:userId/likes',
+    validateLikePagination,
+    getLikesByUser
+  );
+
+  // ============================================
+  // RUTAS PROTEGIDAS (Requieren autenticación)
+  // ============================================
+
+  /**
+   * POST/DELETE /posts/:postId/like
+   * Toggle like: dar like o quitar like (según estado actual)
+   */
+  router.post(
+    '/posts/:postId/like',
+    verifyToken,
+    validateLikePost,
+    toggleLike
+  );
+
+  /**
+   * GET /posts/:postId/like/check
+   * Verificar si el usuario autenticado dio like al post
+   */
+  router.get(
+    '/posts/:postId/like/check',
+    verifyToken,
+    checkUserLike
+  );
+
+  return router;
+}
+
+export default createLikesRouter;

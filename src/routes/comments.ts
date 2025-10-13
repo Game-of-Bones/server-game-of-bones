@@ -1,5 +1,7 @@
+// src/routes/comments.ts
 import { Router } from 'express';
 import {
+  getAllComments,
   createComment,
   getCommentsByPost,
   getCommentById,
@@ -13,10 +15,13 @@ import { validateCreateComment, validateUpdateComment } from '../middleware/comm
 export function createCommentsRouter(): Router {
   const router = Router();
 
-  // Obtener comentarios de un post (público)
+  // Obtener todos los comentarios (público)
+  router.get('/comments', getAllComments);
+
+  // Obtener comentarios de un post específico (público)
   router.get('/posts/:postId/comments', getCommentsByPost);
 
-  // Crear comentario (requiere autenticación + validación)
+  // Crear comentario en un post (requiere autenticación + validación)
   router.post(
     '/posts/:postId/comments',
     verifyToken,

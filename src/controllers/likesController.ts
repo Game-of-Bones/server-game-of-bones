@@ -1,66 +1,265 @@
-// import { Request, Response, NextFunction } from "express";
-// import LikeManager from "../models/LikeManager";
+// src/controllers/likesController.ts
+/**
+ * CONTROLADOR DE LIKES
+ */
 
-// // Create an instance of the manager that we will use in the controllers
-// const likeManager = new LikeManager();
+import { Request, Response } from 'express';
+import { Like } from '../models/Like';
+import { User } from '../models/User';
+import Fossil from '../models/Posts';
 
-// /**
-//  * Gets the number of likes for a specific post.
-//  */
-// const getLikesByPostId = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     const postId = parseInt(req.params.postId, 10);
-//     const likeCount = await likeManager.findCountByPostId(postId);
+/**
+ * Obtener TODOS los likes (sin filtrar por post)
+ * GET /gameofbones/likes
+ */
+export const getAllLikes = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
 
-//     res.status(200).json({ count: likeCount });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
+    const total = await Like.count();
 
-// /**
-//  * Adds or removes a like from a post.
-//  * If the user has already liked the post, the like is removed.
-//  * If not, it is added.
-//  */
-// const toggleLike = async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     const postId = parseInt(req.params.postId, 10);
-//     // We assume the user ID comes from the authentication middleware
-//     const userId = req.user?.id;
+    const likes = await Like.findAll({
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'email']
+        },
+        {
+          model: Fossil,
+          as: 'post',
+          attributes: ['id', 'title', 'summary', 'image_url']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: Number(limit),
+      offset
+    });
 
-//     // Validate that the user is authenticated
-//     if (!userId) {
-//       return res.status(401).json({ error: 'Usuario no autenticado' });
-//     }
+    res.status(200).json({
+      success: true,
+      data: {
+        likes,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error en getAllLikes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener todos los likes'
+    });
+  }
+};
 
-//     // Check if the like already exists
-//     const existingLike = await likeManager.findUserLikeForPost(userId, postId);
+/**
+ * Toggle Like (Dar o quitar like)
+ * POST /posts/:postId/like
+ */
+export const toggleLike = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user!.id;
 
-//     if (existingLike) {
-//       await likeManager.delete({ user_id: userId, post_id: postId });
-//       res.status(200).json({ message: "Like removed successfully" });
-//     } else {
-//       const result = await likeManager.add({ user_id: userId, post_id: postId });
-//       res.status(201).json({ insertId: result, message: "Like added successfully" });
-//     }
-//   } catch (err) {
-//     // Check if the error is a MySQL error for a non-existent foreign key
-//     if (
-//       err &&
-//       typeof err === "object" &&
-//       "code" in err &&
-//       err.code === "ER_NO_REFERENCED_ROW_2"
-//     ) {
-//       res.status(404).send("Post not found");
-//     } else {
-//       next(err);
-//     }
-//   }
-// };
+    // Buscar si ya existe el like
+    const existingLike = await Like.findOne({
+      where: {
+        user_id: userId,
+        post_id: Number(postId)
+      }
+    });
 
-// export { getLikesByPostId, toggleLike };
+    if (existingLike) {
+      // Si existe, eliminar (quitar like)
+      await existingLike.destroy();
+
+      res.status(200).json({
+        success: true,
+        message: 'Like eliminado',
+        data: {
+          liked: false,
+          postId: Number(postId)
+        }
+      });
+      return;
+    }
+
+    // Si no existe, crear (dar like)
+    const newLike = await Like.create({
+      user_id: userId,
+      post_id: Number(postId)
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Like agregado',
+      data: {
+        liked: true,
+        postId: Number(postId),
+        likeId: newLike.id
+      }
+    });
+  } catch (error) {
+    console.error('Error en toggleLike:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al procesar like'
+    });
+  }
+};
+
+/**
+ * Obtener likes de un post específico
+ * GET /posts/:postId/likes
+ */
+export const getLikesByPost = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { postId } = req.params;
+    const { page = 1, limit = 20 } = req.pagination || {};
+
+    const offset = (page - 1) * limit;
+
+    // Contar total de likes
+    const total = await Like.count({
+      where: { post_id: Number(postId) }
+    });
+
+    // Obtener likes con información del usuario
+    const likes = await Like.findAll({
+      where: { post_id: Number(postId) },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'email']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit,
+      offset
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        likes,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error en getLikesByPost:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener likes del post'
+    });
+  }
+};
+
+/**
+ * Obtener posts a los que un usuario dio like
+ * GET /users/:userId/likes
+ */
+export const getLikesByUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { page = 1, limit = 20 } = req.pagination || {};
+
+    const offset = (page - 1) * limit;
+
+    // Verificar que el usuario existe
+    const user = await User.findByPk(Number(userId));
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+      return;
+    }
+
+    // Contar total de likes
+    const total = await Like.count({
+      where: { user_id: Number(userId) }
+    });
+
+    // Obtener likes con información del post
+    const likes = await Like.findAll({
+      where: { user_id: Number(userId) },
+      include: [
+        {
+          model: Fossil,
+          as: 'post',
+          attributes: ['id', 'title', 'summary', 'image_url', 'status']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit,
+      offset
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          username: user.username
+        },
+        likes,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error en getLikesByUser:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener likes del usuario'
+    });
+  }
+};
+
+/**
+ * Verificar si el usuario autenticado dio like al post
+ * GET /posts/:postId/like/check
+ */
+export const checkUserLike = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user!.id;
+
+    const like = await Like.findOne({
+      where: {
+        user_id: userId,
+        post_id: Number(postId)
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        liked: !!like,
+        likeId: like?.id || null
+      }
+    });
+  } catch (error) {
+    console.error('Error en checkUserLike:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al verificar like'
+    });
+  }
+};

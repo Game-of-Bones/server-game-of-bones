@@ -1,132 +1,92 @@
+// src/server/seeders/index.ts
 /**
- * MODELS INDEX - Configuración y relaciones
+ * RUNNER PRINCIPAL DE SEEDERS
+ * Ejecuta los seeders según el entorno
  */
 
 import sequelize from '../database/database';
-import { Comment } from './Comment';
-import { User } from './User';
 
-// NOTA: Estas importaciones darán error temporal hasta que tus compis
-// desarrollen sus modelos. Es NORMAL y esperado.
-// @ts-ignore - Importación temporal hasta que se desarrollen los modelos
-import Post from './Post';
-// @ts-ignore - Importación temporal hasta que se desarrollen los modelos
-// import Like from './Like'; // Importación temporal hasta que se desarrolle el modelo
+// Importar seeders de desarrollo
+import { seedUsers as seedUsersDev } from '../database/seeders/development/01-users';
+import { seedPosts as seedFossilsDev } from '../database/seeders/development/02-posts';
+import { seedComments as seedCommentsDev } from '../database/seeders/development/03-comments';
+import { seedLikes as seedLikesDev } from '../database/seeders/development/04-likes';
 
-// ============================================
-// FUNCIÓN DE CONFIGURACIÓN DE RELACIONES
-// ============================================
+// Importar seeders de test
+import { seedUsers as seedUsersTest } from '../database/seeders/test/01-users';
+import { seedPosts as seedFossilsTest } from '../database/seeders/test/02-posts';
+import { seedComments as seedCommentsTest } from '../database/seeders/test/03-comments';
+import { seedLikes as seedLikesTest } from '../database/seeders/test/04-likes';
 
-/**
- * Configura las asociaciones (relaciones) entre los modelos de Sequelize.
- * Se llama desde server.ts después de autenticar la conexión a DB.
- */
-export const setupAssociations = (): void => {
-    console.log('🔗 Configurando asociaciones de modelos...');
-    
-    // ============================================
-    // ASOCIACIONES ACTIVAS
-    // ============================================
+const isTest = process.env.NODE_ENV === 'test';
 
-    // User - Comment (1:N)
-    User.hasMany(Comment, {
-        foreignKey: 'user_id',
-        as: 'comments'
-    });
-    Comment.belongsTo(User, {
-        foreignKey: 'user_id',
-        as: 'author'
-    });
+export const runAllSeeders = async (): Promise<void> => {
+  try {
+    console.log('\n🌱 ================================');
+    console.log(`🌱 EJECUTANDO SEEDERS (${isTest ? 'TEST' : 'DEVELOPMENT'})`);
+    console.log('🌱 ================================\n');
 
-    // ============================================
-    // ASOCIACIONES PENDIENTES (Post no disponible aún)
-    // ============================================
-    
-    /*
-    // User - Post (1:N)
-    User.hasMany(Post, {
-        foreignKey: 'user_id',
-        as: 'posts'
-    });
-    Post.belongsTo(User, {
-        foreignKey: 'user_id',
-        as: 'author'
-    });
+    await sequelize.authenticate();
+    console.log('✅ Conexión a BD establecida\n');
 
-    // Post - Comment (1:N)
-    Post.hasMany(Comment, {
-        foreignKey: 'post_id',
-        as: 'comments'
-    });
-    Comment.belongsTo(Post, {
-        foreignKey: 'post_id',
-        as: 'post'
-    });
-
-    // User - Like (1:N) - Si existe el modelo Like
-    // @ts-ignore - La importación de Like puede no existir
-    if (typeof Like !== 'undefined') {
-        // @ts-ignore 
-        User.hasMany(Like, {
-            foreignKey: 'user_id',
-            as: 'likes'
-        });
-        // @ts-ignore 
-        Like.belongsTo(User, {
-            foreignKey: 'user_id',
-            as: 'user'
-        });
-
-        // @ts-ignore 
-        Post.hasMany(Like, {
-            foreignKey: 'post_id',
-            as: 'likes'
-        });
-        // @ts-ignore 
-        Like.belongsTo(Post, {
-            foreignKey: 'post_id',
-            as: 'post'
-        });
+    if (isTest) {
+      // ============================================
+      // SEEDERS DE TEST
+      // ============================================
+      console.log('📊 Modo: TEST - Datos predecibles\n');
+      
+      await seedUsersTest();
+      console.log('');
+      
+      await seedFossilsTest();
+      console.log('');
+      
+      await seedCommentsTest();
+      console.log('');
+      
+      await seedLikesTest();
+      console.log('');
+      
+    } else {
+      // ============================================
+      // SEEDERS DE DESARROLLO
+      // ============================================
+      console.log('📊 Modo: DEVELOPMENT - Datos realistas\n');
+      
+      await seedUsersDev();
+      console.log('');
+      
+      await seedFossilsDev();
+      console.log('');
+      
+      await seedCommentsDev();
+      console.log('');
+      
+      await seedLikesDev();
+      console.log('');
     }
-    */
-    
-    console.log('✅ Asociaciones configuradas: User <-> Comment');
-    console.log('⏳ Pendientes: Post, Like (cuando estén disponibles)');
+
+    console.log('🎉 ================================');
+    console.log('🎉 SEEDERS COMPLETADOS');
+    console.log('🎉 ================================\n');
+
+  } catch (error) {
+    console.error('\n❌ ERROR EJECUTANDO SEEDERS\n', error);
+    throw error;
+  }
 };
 
+// Ejecutar si se llama directamente
+if (require.main === module) {
+  runAllSeeders()
+    .then(() => {
+      console.log('✅ Seeders ejecutados exitosamente');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('❌ Error:', error);
+      process.exit(1);
+    });
+}
 
-// ============================================
-// SINCRONIZAR BASE DE DATOS (Función auxiliar)
-// ============================================
-
-export const syncDatabase = async (force: boolean = false): Promise<void> => {
-    try {
-        console.log('🔄 Sincronizando base de datos...');
-        
-        await sequelize.authenticate();
-        console.log('✅ Conexión a base de datos exitosa');
-        
-        // Sincronizar todos los modelos definidos, incluyendo Comment y User
-        await sequelize.sync({ force, alter: !force }); 
-        
-        console.log(`✅ Base de datos sincronizada ${force ? '(recreada)' : '(actualizada)'}`);
-        
-    } catch (error) {
-        console.error('❌ Error al sincronizar base de datos:', error);
-        throw error;
-    }
-};
-
-// ============================================
-// EXPORTACIONES
-// ============================================
-
-export {
-    sequelize,
-    Comment,
-    User,
-    // Post,    // Pendiente
-    // Like     // Pendiente
-};
-
-export default sequelize;
+export default runAllSeeders;

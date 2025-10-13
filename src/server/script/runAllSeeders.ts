@@ -1,7 +1,7 @@
+// src/scripts/runAllSeeders.ts
 /**
- * EJECUTAR TODOS LOS SEEDERS
- * 
- * Script para poblar la base de datos con datos de prueba
+ * EJECUTOR DE SEEDERS
+ * Detecta automáticamente el entorno y ejecuta los seeders correspondientes
  */
 
 import dotenv from 'dotenv';
@@ -9,9 +9,10 @@ import { syncDatabase } from '../../models';
 import { seedComments } from './03-comments';
 import { seedPosts } from './02-posts'; 
 
-dotenv.config();
-
-const runAllSeeders = async (): Promise<void> => {
+/**
+ * Ejecutar todos los seeders según el entorno
+ */
+export const runAllSeeders = async (): Promise<void> => {
   try {
     console.log('🌱 Iniciando seeders...\n');
 
@@ -46,10 +47,5 @@ const runAllSeeders = async (): Promise<void> => {
     process.exit(1);
   }
 };
-
-// Ejecutar si es llamado directamente
-if (require.main === module) {
-  runAllSeeders();
-}
 
 export default runAllSeeders;

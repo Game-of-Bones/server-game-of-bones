@@ -2,8 +2,58 @@
 import { Request, Response } from 'express';
 import { Comment } from '../models/Comment';
 import { User } from '../models/User';
-// TODO: Descomentar cuando el modelo Post esté disponible
-// import { Post } from '../models/Post';
+import Fossil from '../models/Posts';
+
+/**
+ * Obtener TODOS los comentarios (sin filtrar por post)
+ * GET /gameofbones/comments
+ */
+export const getAllComments = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const total = await Comment.count();
+
+    const comments = await Comment.findAll({
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['id', 'username', 'email']
+        },
+        {
+          model: Fossil,
+          as: 'post',
+          attributes: ['id', 'title', 'summary']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: Number(limit),
+      offset
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        comments,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / Number(limit))
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Error al obtener todos los comentarios:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener comentarios',
+      error: error.message
+    });
+  }
+};
 
 /**
  * Crear un nuevo comentario
@@ -13,7 +63,7 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
   try {
     const { postId } = req.params;
     const { content } = req.body;
-    const userId = req.user?.id; // Del middleware verifyToken
+    const userId = req.user?.id;
 
     if (!userId) {
       res.status(401).json({
@@ -23,19 +73,6 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // TODO: Verificar que el post existe cuando Post esté disponible
-    /*
-    const post = await Post.findByPk(postId);
-    if (!post) {
-      res.status(404).json({
-        success: false,
-        message: 'Post no encontrado'
-      });
-      return;
-    }
-    */
-
-    // Crear el comentario
     const comment = await Comment.create({
       post_id: parseInt(postId),
       user_id: userId,
@@ -58,24 +95,12 @@ export const createComment = async (req: Request, res: Response): Promise<void> 
 };
 
 /**
- * Obtener comentarios de un post
+ * Obtener comentarios de un post específico
  * GET /gameofbones/posts/:postId/comments
  */
 export const getCommentsByPost = async (req: Request, res: Response): Promise<void> => {
   try {
     const { postId } = req.params;
-
-    // TODO: Verificar que el post existe cuando Post esté disponible
-    /*
-    const post = await Post.findByPk(postId);
-    if (!post) {
-      res.status(404).json({
-        success: false,
-        message: 'Post no encontrado'
-      });
-      return;
-    }
-    */
 
     const comments = await Comment.findAll({
       where: { post_id: postId },
@@ -164,7 +189,6 @@ export const updateComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Verificar que el usuario es el autor del comentario
     if (comment.user_id !== userId) {
       res.status(403).json({
         success: false,
@@ -173,7 +197,6 @@ export const updateComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Actualizar
     await comment.update({ content });
 
     res.status(200).json({
@@ -192,7 +215,7 @@ export const updateComment = async (req: Request, res: Response): Promise<void> 
 };
 
 /**
- * Eliminar un comentario (soft delete)
+ * Eliminar un comentario
  * DELETE /gameofbones/comments/:id
  */
 export const deleteComment = async (req: Request, res: Response): Promise<void> => {
@@ -210,7 +233,6 @@ export const deleteComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Verificar que el usuario es el autor del comentario o es admin
     if (comment.user_id !== userId && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
@@ -219,7 +241,6 @@ export const deleteComment = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Soft delete
     await comment.destroy();
 
     res.status(200).json({
@@ -244,7 +265,6 @@ export const getCommentsByUser = async (req: Request, res: Response): Promise<vo
   try {
     const { userId } = req.params;
 
-    // Verificar que el usuario existe
     const user = await User.findByPk(userId);
     if (!user) {
       res.status(404).json({
