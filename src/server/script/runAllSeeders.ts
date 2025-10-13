@@ -4,50 +4,47 @@
  * Detecta automáticamente el entorno y ejecuta los seeders correspondientes
  */
 
-const isTest = process.env.NODE_ENV === 'test';
+import dotenv from 'dotenv';
+import { syncDatabase } from '../../models';
+import { seedComments } from './03-comments';
+import { seedPosts } from './02-posts'; 
 
 /**
  * Ejecutar todos los seeders según el entorno
  */
 export const runAllSeeders = async (): Promise<void> => {
   try {
-    const env = isTest ? 'test' : 'development';
-    console.log(`\n🌱 Ejecutando seeders (${env})...\n`);
+    console.log('🌱 Iniciando seeders...\n');
 
-    if (isTest) {
-      // ============================================
-      // SEEDERS DE TEST
-      // ============================================
-      const { seedUsers } = await import('../../database/seeders/test/01-users');
-      const { seedPosts } = await import('../../database/seeders/test/02-posts');
-      const { seedComments } = await import('../../database/seeders/test/03-comments');
-      const { seedLikes } = await import('../../database/seeders/test/04-likes');
+    // Sincronizar base de datos (recrear tablas)
+    await syncDatabase(true);
+    console.log('');
+// =====================================================
+    // 2️⃣ Ejecutar seeders en orden lógico
+    // =====================================================
 
-      await seedUsers();
-      await seedPosts();
-      await seedComments();
-      await seedLikes();
+    // await seedUsers();   // (Descomenta cuando el seeder de usuarios esté listo)
+    await seedPosts();     // ✅ Seeder de posts (Fósiles)
+    await seedComments();  // ✅ Seeder de comentarios (usa post_id)
 
-    } else {
-      // ============================================
-      // SEEDERS DE DEVELOPMENT
-      // ============================================
-      const { seedUsers } = await import('../../database/seeders/development/01-users');
-      const { seedPosts } = await import('../../database/seeders/development/02-posts');
-      const { seedComments } = await import('../../database/seeders/development/03-comments');
-      const { seedLikes } = await import('../../database/seeders/development/04-likes');
+    // ============================================
+    // SEEDERS PENDIENTES (de otros compañeros)
+    // ============================================
+    
+    /*
+    // Descomentar cuando estén disponibles:
+    
+    // await seedUsers();   // Pendiente: User seeder
+    // await seedLikes();   // Pendiente: Like seeder
+    */
 
-      await seedUsers();
-      await seedPosts();
-      await seedComments();
-      await seedLikes();
-    }
-
-    console.log('\n✅ Todos los seeders ejecutados correctamente\n');
-
-  } catch (error: any) {
-    console.error('\n❌ Error ejecutando seeders:', error.message);
-    throw error;
+    console.log('\n✅ Todos los seeders ejecutados exitosamente');
+    console.log('📊 Datos de prueba cargados en la base de datos\n');
+    
+    process.exit(0);
+  } catch (error) {
+    console.error('\n❌ Error ejecutando seeders:', error);
+    process.exit(1);
   }
 };
 
