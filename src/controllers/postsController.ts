@@ -1,131 +1,230 @@
-import { RequestHandler } from "express";
-import { Post } from "../models/Post";
+/**
+ * POSTS CONTROLLER
+ *
+ * Maneja operaciones CRUD de posts (descubrimientos de fósiles):
+ * - Listar posts (con filtros y paginación)
+ * - Ver un post específico
+ * - Crear nuevo post
+ * - Actualizar post
+ * - Eliminar post (soft delete)
+ */
 
-// Definimos la interfaz para el body de la petición
-interface FossilRequestBody {
-  title: string;
-  summary: string;
-  image_url?: string;
-  discovery_date?: string;
-  location?: string;
-  paleontologist?: string;
-  fossil_type?: FossilType;
-  geological_period?: string;
-  author_id: number;
-  status?: Status;
-  source?: string;
-}
+import { Request, Response } from 'express';
+import { Post, CreatePostDTO, UpdatePostDTO, FossilType, PostStatus } from '../models/Post';
+import { User } from '../models/User';
+import { asyncHandler } from '../middleware/handleError';
 
-// Creamos el controller usando RequestHandler
-export const createFossil: RequestHandler<{}, any, FossilRequestBody> = async (req, res) => {
-  try {
-    const {
-      title,
-      summary,
-      image_url,
-      discovery_date,
-      location,
-      paleontologist,
-      fossil_type,
-      geological_period,
-      author_id,
-      status,
-      source,
-    } = req.body;
+/**
+ * Obtener todos los posts
+ * GET /api/posts
+ * Query params: ?status=published&fossil_type=bones_teeth&page=1&limit=10
+ */
+export const getAllPosts = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const {
+    status,
+    fossil_type,
+    author_id,
+    page = '1',
+    limit = '10',
+  } = req.query;
 
-    const newFossil = await Fossil.create({
-      title,
-      summary,
-      image_url,
-      discovery_date: discovery_date ? new Date(discovery_date) : undefined,
-      location,
-      paleontologist,
-      fossil_type: fossil_type ?? "bones_teeth",
-      geological_period,
-      author_id,
-      status: status ?? "draft",
-      source,
-    });
+  const pageNum = parseInt(page as string);
+  const limitNum = parseInt(limit as string);
+  const offset = (pageNum - 1) * limitNum;
 
-    res.status(201).json({
-      message: "Fósil registrado correctamente",
-      data: newFossil,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al crear el fósil" });
-  }
-};
+  // Construir filtros
+  const where: any = {};
 
+  if (status) where.status = status;
+  if (fossil_type) where.fossil_type = fossil_type;
+  if (author_id) where.author_id = parseInt(author_id as string);
 
-/* -------------------- READ ALL -------------------- */
-export const getAllFossils: RequestHandler = async (req, res) => {
-  try {
-    const fossils = await Fossil.findAll();
-    res.status(200).json({ data: fossils });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al obtener los fósiles" });
-  }
-};
-
-/* -------------------- READ ONE -------------------- */
-export const getFossilById: RequestHandler<{ id: string }> = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const fossil = await Fossil.findByPk(id);
-
-    if (!fossil) {
-      return res.status(404).json({ error: "Fósil no encontrado" });
+  // Si no es admin, solo mostrar posts publicados (excepto propios)
+  if (req.user?.role !== 'admin') {
+    if (!author_id || parseInt(author_id as string) !== req.user?.id) {
+      where.status = 'published';
     }
-
-    res.status(200).json({ data: fossil });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al obtener el fósil" });
   }
-};
 
-/* -------------------- UPDATE -------------------- */
-export const updateFossil: RequestHandler<{ id: string }, any, Partial<FossilRequestBody>> = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const fossil = await Fossil.findByPk(id);
+  const { count, rows: posts } = await Post.findAndCountAll({
+    where,
+    limit: limitNum,
+    offset,
+    include: [
+      {
+        model: User,
+        as: 'author',
+        attributes: ['id', 'username', 'email'],
+      },
+    ],
+    order: [['created_at', 'DESC']],
+  });
 
-    if (!fossil) {
-      return res.status(404).json({ error: "Fósil no encontrado" });
-    }
+  res.status(200).json({
+    success: true,
+    data: {
+      posts,
+      pagination: {
+        total: count,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(count / limitNum),
+      },
+    },
+  });
+});
 
-    await fossil.update({
-      ...req.body,
-      discovery_date: req.body.discovery_date ? new Date(req.body.discovery_date) : fossil.discovery_date,
+/**
+ * Obtener un post por ID
+ * GET /api/posts/:id
+ */
+export const getPostById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  const post = await Post.findByPk(id, {
+    include: [
+      {
+        model: User,
+        as: 'author',
+        attributes: ['id', 'username', 'email'],
+      },
+    ],
+  });
+
+  if (!post) {
+    res.status(404).json({
+      success: false,
+      message: 'Post no encontrado',
     });
-
-    res.status(200).json({
-      message: "Fósil actualizado correctamente",
-      data: fossil,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al actualizar el fósil" });
+    return;
   }
-};
 
-/* -------------------- DELETE -------------------- */
-export const deleteFossil: RequestHandler<{ id: string }> = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const fossil = await Fossil.findByPk(id);
-
-    if (!fossil) {
-      return res.status(404).json({ error: "Fósil no encontrado" });
+  // Si el post es borrador, solo el autor o admin pueden verlo
+  if (post.status === 'draft') {
+    if (req.user?.role !== 'admin' && req.user?.id !== post.author_id) {
+      res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para ver este post',
+      });
+      return;
     }
-
-    await fossil.destroy();
-
-    res.status(200).json({ message: "Fósil eliminado correctamente" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al eliminar el fósil" });
   }
-};
+
+  // Añadir contadores
+  const likes_count = await post.getLikesCount();
+  const comments_count = await post.getCommentsCount();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      ...post.toJSON(),
+      likes_count,
+      comments_count,
+    },
+  });
+});
+
+/**
+ * Crear nuevo post
+ * POST /api/posts
+ * Requiere autenticación
+ */
+export const createPost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { title, summary, image_url, discovery_date, location, paleontologist, fossil_type, geological_period, status, source } = req.body;
+
+  const post = await Post.create({
+    title,
+    summary,
+    image_url,
+    discovery_date: discovery_date ? new Date(discovery_date) : undefined,
+    location,
+    paleontologist,
+    fossil_type: fossil_type || 'bones_teeth',
+    geological_period,
+    author_id: req.user!.id, // Tomar del JWT, no del body
+    status: status || 'draft',
+    source,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'Post creado exitosamente',
+    data: post.toJSON(),
+  });
+});
+
+/**
+ * Actualizar post
+ * PUT /api/posts/:id
+ * Requiere ser el autor o admin
+ */
+export const updatePost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  const post = await Post.findByPk(id);
+
+  if (!post) {
+    res.status(404).json({
+      success: false,
+      message: 'Post no encontrado',
+    });
+    return;
+  }
+
+  // Verificar permisos (owner o admin)
+  if (req.user!.role !== 'admin' && req.user!.id !== post.author_id) {
+    res.status(403).json({
+      success: false,
+      message: 'No tienes permiso para editar este post',
+    });
+    return;
+  }
+
+  const updateData: UpdatePostDTO = req.body;
+
+  // No permitir cambiar el author_id
+  delete (updateData as any).author_id;
+
+  await post.update(updateData);
+
+  res.status(200).json({
+    success: true,
+    message: 'Post actualizado exitosamente',
+    data: post.toJSON(),
+  });
+});
+
+/**
+ * Eliminar post (soft delete)
+ * DELETE /api/posts/:id
+ * Requiere ser el autor o admin
+ */
+export const deletePost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  const post = await Post.findByPk(id);
+
+  if (!post) {
+    res.status(404).json({
+      success: false,
+      message: 'Post no encontrado',
+    });
+    return;
+  }
+
+  // Verificar permisos (owner o admin)
+  if (req.user!.role !== 'admin' && req.user!.id !== post.author_id) {
+    res.status(403).json({
+      success: false,
+      message: 'No tienes permiso para eliminar este post',
+    });
+    return;
+  }
+
+  await post.destroy(); // Soft delete (paranoid: true)
+
+  res.status(200).json({
+    success: true,
+    message: 'Post eliminado exitosamente',
+  });
+});
