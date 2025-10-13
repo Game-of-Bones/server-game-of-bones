@@ -1,13 +1,13 @@
 /**
  * EJECUTAR TODOS LOS SEEDERS
- * 
+ *
  * Script para poblar la base de datos con datos de prueba
  */
 
 import dotenv from 'dotenv';
-import { syncDatabase } from '../../models';
+import { syncDatabase } from '../models';
 import { seedComments } from './03-comments';
-import { seedPosts } from './02-posts'; 
+import { seedPosts } from './02-posts';
 
 dotenv.config();
 
@@ -29,17 +29,17 @@ const runAllSeeders = async (): Promise<void> => {
     // ============================================
     // SEEDERS PENDIENTES (de otros compañeros)
     // ============================================
-    
+
     /*
     // Descomentar cuando estén disponibles:
-    
+
     // await seedUsers();   // Pendiente: User seeder
     // await seedLikes();   // Pendiente: Like seeder
     */
 
     console.log('\n✅ Todos los seeders ejecutados exitosamente');
     console.log('📊 Datos de prueba cargados en la base de datos\n');
-    
+
     process.exit(0);
   } catch (error) {
     console.error('\n❌ Error ejecutando seeders:', error);
