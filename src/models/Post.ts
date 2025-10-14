@@ -43,10 +43,12 @@ export interface CreatePostDTO {
   image_url?: string;
   discovery_date?: Date;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   paleontologist?: string;
   fossil_type: FossilType;
   geological_period?: string;
-  author_id: number;
+  user_id: number;
   status?: PostStatus;
   source?: string;
 }
@@ -57,6 +59,8 @@ export interface UpdatePostDTO {
   image_url?: string;
   discovery_date?: Date;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   paleontologist?: string;
   fossil_type?: FossilType;
   geological_period?: string;
@@ -71,10 +75,12 @@ export interface PostResponse {
   image_url?: string;
   discovery_date?: Date;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   paleontologist?: string;
   fossil_type: FossilType;
   geological_period?: string;
-  author_id: number;
+  user_id: number;
   status: PostStatus;
   source?: string;
   created_at: Date;
@@ -144,6 +150,14 @@ export class Post extends Model {
   location?: string;
 
   @AllowNull(true)
+  @Column(DataType.DECIMAL(10, 8))
+  latitude?: number;
+
+  @AllowNull(true)
+  @Column(DataType.DECIMAL(11, 8))
+  longitude?: number;
+
+  @AllowNull(true)
   @Column(DataType.STRING(255))
   paleontologist?: string;
 
@@ -169,7 +183,7 @@ export class Post extends Model {
     type: DataType.BIGINT,
     allowNull: false,
   })
-  author_id!: number;
+  user_id!: number;
 
   @Default('draft')
   @Column({

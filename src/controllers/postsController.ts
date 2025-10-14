@@ -23,7 +23,7 @@ export const getAllPosts = asyncHandler(async (req: Request, res: Response): Pro
   const {
     status,
     fossil_type,
-    author_id,
+    user_id,
     page = '1',
     limit = '10',
   } = req.query;
@@ -37,11 +37,11 @@ export const getAllPosts = asyncHandler(async (req: Request, res: Response): Pro
 
   if (status) where.status = status;
   if (fossil_type) where.fossil_type = fossil_type;
-  if (author_id) where.author_id = parseInt(author_id as string);
+  if (user_id) where.user_id = parseInt(user_id as string);
 
   // Si no es admin, solo mostrar posts publicados (excepto propios)
   if (req.user?.role !== 'admin') {
-    if (!author_id || parseInt(author_id as string) !== req.user?.id) {
+    if (!user_id || parseInt(user_id as string) !== req.user?.id) {
       where.status = 'published';
     }
   }
@@ -101,7 +101,7 @@ export const getPostById = asyncHandler(async (req: Request, res: Response): Pro
 
   // Si el post es borrador, solo el autor o admin pueden verlo
   if (post.status === 'draft') {
-    if (req.user?.role !== 'admin' && req.user?.id !== post.author_id) {
+    if (req.user?.role !== 'admin' && req.user?.id !== post.user_id) {
       res.status(403).json({
         success: false,
         message: 'No tienes permiso para ver este post',
@@ -141,7 +141,7 @@ export const createPost = asyncHandler(async (req: Request, res: Response): Prom
     paleontologist,
     fossil_type: fossil_type || 'bones_teeth',
     geological_period,
-    author_id: req.user!.id, // Tomar del JWT, no del body
+    user_id: req.user!.id, // Tomar del JWT, no del body
     status: status || 'draft',
     source,
   });
@@ -172,7 +172,7 @@ export const updatePost = asyncHandler(async (req: Request, res: Response): Prom
   }
 
   // Verificar permisos (owner o admin)
-  if (req.user!.role !== 'admin' && req.user!.id !== post.author_id) {
+  if (req.user!.role !== 'admin' && req.user!.id !== post.user_id) {
     res.status(403).json({
       success: false,
       message: 'No tienes permiso para editar este post',
@@ -182,8 +182,8 @@ export const updatePost = asyncHandler(async (req: Request, res: Response): Prom
 
   const updateData: UpdatePostDTO = req.body;
 
-  // No permitir cambiar el author_id
-  delete (updateData as any).author_id;
+  // No permitir cambiar el user_id
+  delete (updateData as any).user_id;
 
   await post.update(updateData);
 
@@ -213,7 +213,7 @@ export const deletePost = asyncHandler(async (req: Request, res: Response): Prom
   }
 
   // Verificar permisos (owner o admin)
-  if (req.user!.role !== 'admin' && req.user!.id !== post.author_id) {
+  if (req.user!.role !== 'admin' && req.user!.id !== post.user_id) {
     res.status(403).json({
       success: false,
       message: 'No tienes permiso para eliminar este post',

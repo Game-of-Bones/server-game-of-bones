@@ -1,36 +1,39 @@
-import express from "express";
-import authRouter from "./routes/auth.routes";
-import { createCommentsRouter } from "./routes/comments";
+/**
+ * MAIN ROUTER
+ *
+ * Punto de entrada central para todas las rutas de la API
+ */
 
-// import postsRouter from "./routes/posts";
-// import usersRouter from "./routes/users";
-import likesRouter from "./routes/likes";
+import express from 'express';
+import authRouter from './routes/auth.routes';
+import postsRouter from './routes/posts.routes';
+import commentsRouter from './routes/comments.routes';
+import likesRouter from './routes/likes.routes';
 
 const router = express.Router();
 
-// ============================================
-// RUTAS ACTIVAS
-// ============================================
-
-// Rutas de autenticación (User)
-// Rutas: POST /gameofbones/auth/register, POST /gameofbones/auth/login
+/**
+ * AUTH ROUTES
+ * Base: /api/auth
+ */
 router.use('/auth', authRouter);
 
-// Rutas de comentarios (Comment)
-// Rutas:
-// - GET/POST /gameofbones/posts/:postId/comments
-// - GET/PUT/DELETE /gameofbones/comments/:id
-// - GET /gameofbones/users/:userId/comments
-router.use(createCommentsRouter());
+/**
+ * POSTS ROUTES
+ * Base: /api/posts
+ */
+router.use('/posts', postsRouter);
 
-// ============================================
-// RUTAS PENDIENTES (de otros compañeros)
-// ============================================
+/**
+ * COMMENTS ROUTES
+ * Base: /api
+ */
+router.use('/', commentsRouter);
 
-// router.use(postsRouter);      // ⏳ Pendiente: Posts
-// router.use(likesRouter);       // ⏳ Pendiente: Likes
-
-// 👇 Nueva línea: conecta las rutas de fósiles
-router.use("/api/fossils", fossilRoutes);
+/**
+ * LIKES ROUTES
+ * Base: /api
+ */
+router.use('/', likesRouter);
 
 export default router;

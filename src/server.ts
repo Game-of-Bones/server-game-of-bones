@@ -1,20 +1,37 @@
 /**
- * PUNTO DE ENTRADA DEL SERVIDOR
- * * Inicializa y arranca el servidor Express
+ * SERVER ENTRY POINT
+ *
+ * Punto de entrada del servidor
+ * Inicializa conexión a BD y arranca Express
  */
+
 import 'reflect-metadata';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Se importa la función logServerBanner junto con la instancia de app
-import app, { logServerBanner } from './app';
+import app from './app';
 import sequelize, { testConnection } from './database/database';
-import './models'; // Importar modelos para registrarlos
+import './models';
 
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Determinar qué base de datos se está usando
+/**
+ * Banner ASCII para la consola
+ */
+const SERVER_BANNER = `
+╔═══════════════════════════════════════════════╗
+║                                               ║
+║           🦴 GAME OF BONES API 🦴             ║
+║                                               ║
+║      Server running on http://localhost:${PORT}  ║
+║                                               ║
+╚═══════════════════════════════════════════════╝
+`;
+
+/**
+ * Determinar nombre de la base de datos según entorno
+ */
 const getDbName = () => {
   if (NODE_ENV === 'test') {
     return process.env.DB_TEST_NAME || 'game_of_bones_app_test';
@@ -22,9 +39,14 @@ const getDbName = () => {
   return process.env.DB_NAME || 'game_of_bones_app';
 };
 
+/**
+ * Iniciar servidor
+ */
 const startServer = async () => {
   try {
-    // 1. Probar conexión a la base de datos
+    console.log('🔧 Iniciando Game of Bones API...\n');
+
+    // 1. Conectar a la base de datos
     const isConnected = await testConnection();
 
     if (!isConnected) {
@@ -32,36 +54,43 @@ const startServer = async () => {
       process.exit(1);
     }
 
-    // 2. Sincronizar modelos con la BD (sin force en producción)
-    console.log('🔗 Configurando asociaciones de modelos...');
-    console.log('✅ Asociaciones preparadas (comentadas hasta modelos existentes)');
-    console.log('✅ Asociaciones de modelos configuradas');
+    // 2. Sincronizar modelos
+    console.log('📊 Sincronizando modelos con la base de datos...');
+    await sequelize.sync({
+      alter: NODE_ENV === 'development',
+      force: false,
+    });
+    console.log('✅ Modelos sincronizados\n');
 
-    await sequelize.sync({ alter: NODE_ENV === 'development' });
-    console.log('✅ Modelos sincronizados con la base de datos\n');
-
-    // 3. Iniciar servidor
+    // 3. Iniciar servidor HTTP
     app.listen(PORT, () => {
+      // Banner ASCII
+      console.log(SERVER_BANNER);
 
-      // 🦴 Mostrar el banner ASCII al iniciar el servidor 🦴
-      logServerBanner(PORT);
+      // Información del servidor
+      console.log('📍 Información del servidor:');
+      console.log(`   Puerto: ${PORT}`);
+      console.log(`   Ambiente: ${NODE_ENV}`);
+      console.log(`   Base de datos: ${getDbName()}`);
+      console.log('');
 
-      // Logs de información detallada
-      console.log('🚀 Servidor corriendo en puerto', PORT);
-      console.log(`📍 Ambiente: ${NODE_ENV}`);
-      console.log(`🗄️  Base de datos: ${getDbName()}`);
-      console.log('🔗 Health check:', `http://localhost:${PORT}/health`);
-      console.log('🔗 API:', `http://localhost:${PORT}/gameofbones`);
+      // Endpoints disponibles
+      console.log('🔗 Endpoints disponibles:');
+      console.log(`   Health check: http://localhost:${PORT}/health`);
+      console.log(`   API root: http://localhost:${PORT}/api`);
+      console.log(`   Auth: http://localhost:${PORT}/api/auth`);
+      console.log(`   Posts: http://localhost:${PORT}/api/posts`);
+      console.log('');
 
-      // Emoji especial según el ambiente
+      // Estado según ambiente
       if (NODE_ENV === 'test') {
         console.log('🧪 Modo TEST activado');
       } else if (NODE_ENV === 'production') {
         console.log('🏭 Modo PRODUCCIÓN activado');
       } else {
-        console.log('🛠️  Modo DESARROLLO activado');
+        console.log('🛠️  Modo DESARROLLO activado');
       }
-      console.log('');
+      console.log('\n✨ Servidor listo para recibir peticiones\n');
     });
 
   } catch (error) {
@@ -70,4 +99,5 @@ const startServer = async () => {
   }
 };
 
+// Iniciar
 startServer();

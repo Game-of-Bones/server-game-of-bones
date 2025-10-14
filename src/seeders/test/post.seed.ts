@@ -36,7 +36,7 @@ export const seedTestPosts = async (): Promise<void> => {
         summary: 'This is a published test post for automated testing.',
         fossil_type: 'bones_teeth' as const,
         location: 'Test Location',
-        author_id: users[0].id, // Admin
+        user_id: users[0].id, // Admin
         status: 'published' as const,
       },
 
@@ -46,7 +46,7 @@ export const seedTestPosts = async (): Promise<void> => {
         summary: 'This is a draft test post for automated testing.',
         fossil_type: 'plant_impressions' as const,
         location: 'Test Location 2',
-        author_id: users[0].id, // Admin
+        user_id: users[0].id, // Admin
         status: 'draft' as const,
       },
 
@@ -56,7 +56,7 @@ export const seedTestPosts = async (): Promise<void> => {
         summary: 'This is a test post created by a regular user.',
         fossil_type: 'amber_insects' as const,
         location: 'Test Location 3',
-        author_id: users[1].id, // User normal
+        user_id: users[1].id, // User normal
         status: 'published' as const,
       },
     ];

@@ -46,21 +46,16 @@ export const register = asyncHandler(
       password_hash: password,
       role: role === 'admin' ? 'admin' : 'user',
     });
-
-    // Generar token JWT
+    // Línea 50-60 en register
     const jwtSecret: Secret = process.env.JWT_SECRET || 'secret';
     const jwtExpiresIn: string = process.env.JWT_EXPIRES_IN || '7d';
 
+    // @ts-ignore
     const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      { id: user.id, email: user.email, role: user.role },
       jwtSecret,
       { expiresIn: jwtExpiresIn }
     );
-
     res.status(201).json({
       success: true,
       message: 'Usuario registrado exitosamente',
@@ -102,16 +97,13 @@ export const login = asyncHandler(
       return;
     }
 
-    // Generar token JWT
+    // Línea 105-115 en login
     const jwtSecret: Secret = process.env.JWT_SECRET || 'secret';
     const jwtExpiresIn: string = process.env.JWT_EXPIRES_IN || '7d';
 
+    // @ts-ignore
     const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
+      { id: user.id, email: user.email, role: user.role },
       jwtSecret,
       { expiresIn: jwtExpiresIn }
     );
