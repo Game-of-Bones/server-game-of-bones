@@ -1,8 +1,7 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
+export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
+  setupFiles: ['<rootDir>/src/tests/env.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/tests/setup.ts'],
   testMatch: ['**/tests/**/*.test.ts'],
-  verbose: true,
-  forceExit: true, // Ayuda a asegurar que Jest termine después de las pruebas de BD
 };

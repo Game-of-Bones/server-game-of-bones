@@ -1,8 +1,15 @@
-// src/tests/user.model.test.ts
 import { User, CreateUserDTO, LoginDTO, UserResponse, AuthResponse } from '../models/User';
+import sequelize from '../database/database';
 
 describe('User Model', () => {
+  beforeAll(async () => {
+    await sequelize.authenticate();
+    await sequelize.sync({ force: true });
+  });
 
+  afterAll(async () => {
+    await sequelize.close();
+  });
   describe('User Interface', () => {
     test('Debe tener todas las propiedades requeridas', () => {
       const user: User = {

@@ -1,242 +1,259 @@
 /**
- * TESTS DE COMENTARIOS
- * * NOTA: Estos tests no funcionarán hasta que User y Post estén implementados.
- * Se han eliminado las pruebas de anidación (parent_id) para coincidir con el
- * controlador actual.
+ * COMMENTS ENDPOINTS TESTS
+ *
+ * Cubre:
+ * - Crear comentario (auth)
+ * - Validaciones y 401 sin token
+ * - Listar comentarios de un post (público)
+ * - Obtener comentario por id (público)
+ * - Actualizar comentario (solo autor / auth)
+ * - Eliminar comentario (soft delete / auth)
  */
 
 import request from 'supertest';
 import app from '../app';
-import { Comment } from '../models/Comment'; 
-
-// Declarar tipos temporales para User y Post
-type User = any;
-type Post = any;
-
-// Mock temporal de User y Post (comentar cuando existan los modelos reales)
-const User = {
-    create: jest.fn(),
-    destroy: jest.fn(),
-};
-
-const Post = {
-    create: jest.fn(),
-    destroy: jest.fn(),
-    findByPk: jest.fn(),
-};
+import { User } from '../models/User';
+import { Post } from '../models/Post';
+import { Comment } from '../models/Comment';
 
 describe('Comments API', () => {
-    let testUser: User;
-    let testPost: Post;
+  let authToken: string;
+  let userId: number;
+  let postId: number;
 
-    beforeEach(async () => {
-        // NOTA: Estos tests no funcionarán hasta que User y Post existan
-        // Descomenta estas líneas cuando estén disponibles:
-        
-        /*
-        // Crear usuario de prueba
-        testUser = await User.create({
-          username: 'testuser',
-          email: 'test@example.com',
-          password: 'hashedpassword123',
-        });
+  beforeEach(async () => {
+    // Estado limpio por test
+    await Comment.destroy({ where: {}, force: true });
+    await Post.destroy({ where: {}, force: true });
+    await User.destroy({ where: {}, force: true });
 
-        // Crear post de prueba
-        testPost = await Post.create({
-          user_id: testUser.id,
-          title: 'Test Post',
-          content: 'This is a test post content',
-        });
-        */
+    // 1) Usuario + token válido
+    const reg = await request(app)
+      .post('/api/auth/register')
+      .send({
+        username: 'commenter',
+        email: 'commenter@gameofbones.com',
+        password: 'TestPass123!',
+      })
+      .expect(201);
+
+    authToken = reg.body.data.token;
+    userId = reg.body.data.user.id;
+
+    // 2) Post publicado para comentar
+    const post = await Post.create({
+      title: 'Post para comentarios',
+      summary:
+        'Entrada publicada para probar la API de comentarios en los tests automáticos.',
+      fossil_type: 'bones_teeth',
+      user_id: userId,
+      status: 'published',
+    });
+    postId = post.id;
+  });
+
+  describe('POST /api/posts/:postId/comments', () => {
+    test('Debe crear un comentario con autenticación', async () => {
+      const res = await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          content:
+            '¡Increíble hallazgo! Este fósil podría aportar mucha información.',
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('id');
+      expect(res.body.data).toHaveProperty('post_id', postId);
+      expect(res.body.data).toHaveProperty('user_id', userId);
+      expect(res.body.data).toHaveProperty('author');
+      expect(res.body.data.author).toHaveProperty('username', 'commenter');
     });
 
-    afterEach(async () => {
-        // Limpiar datos después de cada test
-        // Descomenta cuando User y Post existan:
-        /*
-        await Comment.destroy({ where: {}, truncate: true, cascade: true });
-        await Post.destroy({ where: {}, truncate: true, cascade: true });
-        await User.destroy({ where: {}, truncate: true, cascade: true });
-        */
+    test('Debe retornar 401 sin autenticación', async () => {
+      await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .send({ content: 'sin token' })
+        .expect(401);
     });
 
-    // Tests comentados hasta que User y Post existan
-    describe.skip('POST /api/comments', () => {
-        it('debe crear un comentario exitosamente', async () => {
-            const commentData = {
-                // Se asume que testPost.id y testUser.id son BigInts (o strings)
-                post_id: testPost.id.toString(), 
-                user_id: testUser.id.toString(),
-                content: 'Este es un comentario de prueba',
-            };
+    test('Debe validar campos requeridos (400 si falta content)', async () => {
+      const res = await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: '' })
+        .expect(400);
 
-            const response = await request(app)
-                .post('/api/comments')
-                .send(commentData)
-                .expect(201);
-
-            expect(response.body).toHaveProperty('id');
-            expect(response.body.content).toBe(commentData.content);
-            expect(response.body).not.toHaveProperty('parent_id');
-        });
-
-        // ELIMINADO: El test 'debe crear una respuesta a un comentario' 
-        // ya que el controlador actual no soporta parent_id.
-
-        it('debe retornar 404 si el post no existe', async () => {
-            const commentData = {
-                post_id: '99999',
-                user_id: testUser.id.toString(),
-                content: 'Comentario para post inexistente',
-            };
-
-            // Para que este test funcione correctamente con los mocks temporales,
-            // debes asegurarte de que Post.findByPk(99999) devuelva null.
-            // Si no estás usando los mocks de Post.findByPk, este test fallará.
-            Post.findByPk.mockResolvedValueOnce(null);
-
-            await request(app)
-                .post('/api/comments')
-                .send(commentData)
-                .expect(404);
-        });
+      expect(res.body.success).toBe(false);
     });
 
-    describe.skip('GET /api/posts/:post_id/comments', () => {
-        it('debe obtener todos los comentarios de un post (sin anidación)', async () => {
-            // Crear varios comentarios
-            await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Primer comentario',
-            });
+    test('Debe retornar 404 si el post no existe', async () => {
+      const res = await request(app)
+        .post('/api/posts/999999/comments')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'Comentario para post inexistente' });
 
-            await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Segundo comentario',
-            });
+      expect([404, 400]).toContain(res.status); // según cómo manejes la inexistencia
+      expect(res.body.success).toBe(false);
+    });
+  });
 
-            const response = await request(app)
-                .get(`/api/posts/${testPost.id}/comments`)
-                .expect(200);
+  describe('GET /api/posts/:postId/comments', () => {
+    test('Debe listar comentarios de un post (público)', async () => {
+      // Crear 2 comentarios
+      await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'Primer comentario' })
+        .expect(201);
 
-            expect(Array.isArray(response.body)).toBe(true);
-            expect(response.body.length).toBe(2);
-            // Verificar que no hay campo 'replies' ni 'parent_id'
-            expect(response.body[0]).not.toHaveProperty('replies');
-            expect(response.body[0]).not.toHaveProperty('parent_id');
-        });
+      await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'Segundo comentario' })
+        .expect(201);
 
-        it('debe incluir información del usuario en los comentarios', async () => {
-            await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Comentario con usuario',
-            });
+      const res = await request(app)
+        .get(`/api/posts/${postId}/comments`)
+        .expect(200);
 
-            const response = await request(app)
-                .get(`/api/posts/${testPost.id}/comments`)
-                .expect(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('comments');
+      expect(Array.isArray(res.body.data.comments)).toBe(true);
+      expect(res.body.data.comments.length).toBe(2);
 
-            expect(response.body[0]).toHaveProperty('user');
-            expect(response.body[0].user).toHaveProperty('username');
-        });
-
-        it('debe retornar array vacío si no hay comentarios', async () => {
-            const response = await request(app)
-                .get(`/api/posts/${testPost.id}/comments`)
-                .expect(200);
-
-            expect(Array.isArray(response.body)).toBe(true);
-            expect(response.body.length).toBe(0);
-        });
+      const c = res.body.data.comments[0];
+      expect(c).toHaveProperty('author');
+      expect(c.author).toHaveProperty('username');
     });
 
-    describe.skip('GET /api/comments/:id', () => {
-        it('debe obtener un comentario por ID', async () => {
-            const comment = await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Comentario específico',
-            });
+    test('Debe devolver array vacío si no hay comentarios', async () => {
+      const res = await request(app)
+        .get(`/api/posts/${postId}/comments`)
+        .expect(200);
 
-            const response = await request(app)
-                .get(`/api/comments/${comment.id}`)
-                .expect(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.comments)).toBe(true);
+      expect(res.body.data.comments.length).toBe(0);
+    });
+  });
 
-            expect(response.body.id).toBe(comment.id.toString());
-            expect(response.body.content).toBe(comment.content);
-            expect(response.body).not.toHaveProperty('replies');
-            expect(response.body).not.toHaveProperty('parent_id');
-        });
+  describe('GET /api/comments/:id', () => {
+    test('Debe obtener un comentario por ID (público)', async () => {
+      const created = await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'Comentario específico' })
+        .expect(201);
 
-        it('debe retornar 404 si el comentario no existe', async () => {
-            await request(app)
-                .get('/api/comments/99999')
-                .expect(404);
-        });
+      const id = created.body.data.id;
+
+      const res = await request(app).get(`/api/comments/${id}`).expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('id', id);
+      expect(res.body.data).toHaveProperty('post_id', postId);
+      expect(res.body.data).toHaveProperty('author');
     });
 
-    describe.skip('PUT /api/comments/:id', () => {
-        it('debe actualizar un comentario', async () => {
-            const comment = await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Contenido original',
-            });
+    test('Debe retornar 404 si el comentario no existe', async () => {
+      const res = await request(app).get('/api/comments/999999').expect(404);
+      expect(res.body.success).toBe(false);
+    });
+  });
 
-            const updatedContent = 'Contenido actualizado';
+  describe('PUT /api/comments/:id', () => {
+    test('Debe actualizar un comentario propio (auth)', async () => {
+      const created = await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'Contenido original' })
+        .expect(201);
 
-            const response = await request(app)
-                .put(`/api/comments/${comment.id}`)
-                .send({ content: updatedContent })
-                .expect(200);
+      const id = created.body.data.id;
 
-            expect(response.body.content).toBe(updatedContent);
-        });
+      const res = await request(app)
+        .put(`/api/comments/${id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'Contenido actualizado' })
+        .expect(200);
 
-        it('debe retornar 404 si el comentario no existe', async () => {
-            await request(app)
-                .put('/api/comments/99999')
-                .send({ content: 'Nuevo contenido' })
-                .expect(404);
-        });
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('content', 'Contenido actualizado');
     });
 
-    describe.skip('DELETE /api/comments/:id', () => {
-        it('debe eliminar lógicamente un comentario (soft delete)', async () => {
-            const comment = await Comment.create({
-                post_id: testPost.id,
-                user_id: testUser.id,
-                content: 'Comentario a eliminar',
-            });
+    test('Debe retornar 401 sin autenticación', async () => {
+      const created = await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'X' })
+        .expect(201);
 
-            await request(app)
-                .delete(`/api/comments/${comment.id}`)
-                .expect(200);
-
-            // Verificar que el comentario existe pero tiene el campo deleted_at no nulo
-            const deletedComment = await Comment.findOne({
-                where: { id: comment.id },
-                paranoid: false // Incluir registros eliminados lógicamente
-            });
-            
-            // Se añade la comprobación para satisfacer a TypeScript
-            expect(deletedComment).toBeTruthy();
-            if (deletedComment) {
-                // Sequelize soft delete (paranoid: true) cambia el comportamiento de findByPk. 
-                // Para confirmar el soft delete, buscamos con paranoid: false.
-                expect(deletedComment.deleted_at).not.toBeNull();
-            }
-        });
-
-        it('debe retornar 404 si el comentario no existe', async () => {
-            await request(app)
-                .delete('/api/comments/99999')
-                .expect(404);
-        });
-
-        
+      await request(app)
+        .put(`/api/comments/${created.body.data.id}`)
+        .send({ content: 'no debería' })
+        .expect(401);
     });
+
+    test('Debe retornar 404 si el comentario no existe', async () => {
+      const res = await request(app)
+        .put('/api/comments/999999')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'nada' });
+
+      expect([404, 400]).toContain(res.status);
+      expect(res.body.success).toBe(false);
+    });
+  });
+
+  describe('DELETE /api/comments/:id', () => {
+    test('Debe eliminar lógicamente un comentario (soft delete)', async () => {
+      const created = await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'A eliminar' })
+        .expect(201);
+
+      const id = created.body.data.id;
+
+      const res = await request(app)
+        .delete(`/api/comments/${id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+
+      // Verificación de soft delete en DB (paranoid: false)
+      const deleted = await Comment.findOne({
+        where: { id },
+        paranoid: false,
+      });
+
+      expect(deleted).toBeTruthy();
+      expect(deleted?.deletedAt).not.toBeNull(); // 👈 camelCase en TS
+    });
+
+    test('Debe retornar 401 sin autenticación', async () => {
+      const created = await request(app)
+        .post(`/api/posts/${postId}/comments`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ content: 'No borrar sin token' })
+        .expect(201);
+
+      await request(app)
+        .delete(`/api/comments/${created.body.data.id}`)
+        .expect(401);
+    });
+
+    test('Debe retornar 404 si el comentario no existe', async () => {
+      const res = await request(app)
+        .delete('/api/comments/999999')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect([404, 400]).toContain(res.status);
+      expect(res.body.success).toBe(false);
+    });
+  });
 });
+
