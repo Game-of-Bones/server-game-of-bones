@@ -1,6 +1,5 @@
 /**
  * USER MODEL
- *
  * Modelo de usuario con autenticación
  * Roles: admin | user
  */
@@ -15,6 +14,8 @@ import {
   BeforeUpdate,
 } from 'sequelize-typescript';
 import bcrypt from 'bcrypt';
+
+
 import { Post } from './Post';
 import { Comment } from './Comment';
 import { Like } from './Like';
@@ -104,17 +105,21 @@ export class User extends Model {
   })
   role!: 'admin' | 'user';
 
+  // ✅ Declarar deletedAt para soft delete
+  declare deletedAt?: Date;
+
   // ============================================
   // RELACIONES
+  // ⚠️ NO importes las clases aquí, usa función lazy
   // ============================================
 
-  @HasMany(() => Post)
+  @HasMany(() => require('./Post').Post)
   posts!: Post[];
 
-  @HasMany(() => Comment)
+  @HasMany(() => require('./Comment').Comment)
   comments!: Comment[];
 
-  @HasMany(() => Like)
+  @HasMany(() => require('./Like').Like)
   likes!: Like[];
 
   // ============================================
@@ -124,7 +129,6 @@ export class User extends Model {
   @BeforeCreate
   @BeforeUpdate
   static async hashPassword(user: User): Promise<void> {
-    // Solo hashear si la contraseña cambió
     if (user.changed('password_hash')) {
       const salt = await bcrypt.genSalt(12);
       user.password_hash = await bcrypt.hash(user.password_hash, salt);
