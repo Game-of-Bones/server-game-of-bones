@@ -1,47 +1,34 @@
 /**
- * EJECUTOR DE SEEDERS - TEST
- * 
- * Propósito:
- * - Ejecutar seeders de test en el orden correcto
- * - Datos mínimos para tests rápidos
- * - NO sincroniza BD (lo hace setup.ts)
- * 
- * Orden de ejecución:
- * 1. Users (2 usuarios)
- * 2. Posts (3 posts)
- * 3. Comments (2 comentarios)
- * 
- * Uso:
- * - Se llama desde tests/setup.ts automáticamente
- * - npm run seed:test (manual)
+ * RUN TEST SEEDERS
  */
 
+import sequelize from '../../database/database';
 import { seedTestUsers } from './users.seed';
-import { seedTestPosts } from './posts.seed';
-import { seedTestComments } from './comments.seed';
+import { seedTestPosts } from './post.seed';
+import { seedTestComments } from './comment.seed';
+import { seedTestLikes } from './likes.seed';
 
 const runTestSeeders = async (): Promise<void> => {
   try {
-    console.log('��� Running test seeders...\n');
+    console.log('🧪 Starting test seeders...\n');
 
-    // Ejecutar seeders en orden
+    await sequelize.authenticate();
+    console.log('✅ Database connected\n');
+
+    await sequelize.sync({ force: true });
+    console.log('✅ Database synchronized\n');
+
     await seedTestUsers();
     await seedTestPosts();
     await seedTestComments();
+    await seedTestLikes();
 
-    console.log('\n✅ Test seeders completed\n');
-
+    console.log('\n✅ All test seeders completed!');
+    process.exit(0);
   } catch (error) {
-    console.error('\n❌ Error running test seeders:', error);
-    throw error;
+    console.error('❌ Error running test seeders:', error);
+    process.exit(1);
   }
 };
 
-// Ejecutar si es llamado directamente
-if (require.main === module) {
-  runTestSeeders()
-    .then(() => process.exit(0))
-    .catch(() => process.exit(1));
-}
-
-export default runTestSeeders;
+runTestSeeders();

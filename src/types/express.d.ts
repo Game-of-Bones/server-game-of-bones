@@ -19,5 +19,4 @@ declare global {
   }
 }
 
-// Esta línea es CRÍTICA - convierte el archivo en un módulo TypeScript
 export {};

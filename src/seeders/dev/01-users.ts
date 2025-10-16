@@ -1,74 +1,55 @@
 /**
- * SEEDER DE USUARIOS - DESARROLLO
+ * USERS SEEDER - DEVELOPMENT
  *
- * Propósito:
- * - Crear usuarios de prueba para desarrollo
- * - Incluye varios roles (admin, user)
- * - Datos variados para probar la app manualmente
- *
- * Uso:
- * - npm run seed:dev
+ * Crea usuarios de prueba con avatares
  */
 
 import { User } from '../../models/User';
-import bcrypt from 'bcrypt';
 
 export const seedUsers = async (): Promise<void> => {
-  try {
-    console.log('👥 Seeding users (desarrollo)...');
+  console.log('🌱 Seeding users...');
 
-    // Hash de contraseñas (12 rounds por seguridad)
-    const adminPassword = await bcrypt.hash('Admin123!', 12);
-    const userPassword = await bcrypt.hash('User123!', 12);
+  const users = [
+    {
+      username: 'admin',
+      email: 'admin@gameofbones.com',
+      password_hash: 'Admin123!',
+      role: 'admin' as const,
+      avatar_url: 'https://i.pravatar.cc/400?img=33',
+    },
+    {
+      username: 'paleontologist_maria',
+      email: 'maria@gameofbones.com',
+      password_hash: 'Maria123!',
+      role: 'user' as const,
+      avatar_url: 'https://i.pravatar.cc/400?img=47',
+    },
+    {
+      username: 'fossil_hunter_carlos',
+      email: 'carlos@gameofbones.com',
+      password_hash: 'Carlos123!',
+      role: 'user' as const,
+      avatar_url: 'https://i.pravatar.cc/400?img=12',
+    },
+    {
+      username: 'dr_rodriguez',
+      email: 'rodriguez@gameofbones.com',
+      password_hash: 'Rodriguez123!',
+      role: 'user' as const,
+      avatar_url: 'https://i.pravatar.cc/400?img=68',
+    },
+    {
+      username: 'explorer_ana',
+      email: 'ana@gameofbones.com',
+      password_hash: 'Ana123!',
+      role: 'user' as const,
+      avatar_url: 'https://i.pravatar.cc/400?img=5',
+    },
+  ];
 
-    // Datos de usuarios de desarrollo
-    const usersData = [
-      // Usuario admin
-      {
-        username: 'admin',
-        email: 'admin@gameofbones.com',
-        password_hash: adminPassword,
-        role: 'admin' as const,
-      },
-      // Usuarios normales variados
-      {
-        username: 'paleontologist1',
-        email: 'paleo1@gameofbones.com',
-        password_hash: userPassword,
-        role: 'user' as const,
-      },
-      {
-        username: 'paleontologist2',
-        email: 'paleo2@gameofbones.com',
-        password_hash: userPassword,
-        role: 'user' as const,
-      },
-      {
-        username: 'researcher',
-        email: 'researcher@gameofbones.com',
-        password_hash: userPassword,
-        role: 'user' as const,
-      },
-      {
-        username: 'scientist',
-        email: 'scientist@gameofbones.com',
-        password_hash: userPassword,
-        role: 'user' as const,
-      },
-    ];
-
-    // Insertar usuarios en BD
-    const createdUsers = await User.bulkCreate(usersData);
-
-    console.log(`✅ ${createdUsers.length} usuarios creados`);
-    console.log('💡 Credenciales de prueba:');
-    console.log('   Admin: admin@gameofbones.com / Admin123!');
-    console.log('   User:  paleo1@gameofbones.com / User123!');
-
-  } catch (error: any) {
-    console.error('❌ Error seeding users:', error.message);
-    throw error;
+  for (const userData of users) {
+    await User.create(userData);
   }
-};
 
-export default seedUsers;
+  console.log('✅ Users seeded successfully');
+};

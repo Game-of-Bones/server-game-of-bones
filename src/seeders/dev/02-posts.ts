@@ -1,136 +1,135 @@
 /**
- * SEEDER DE POSTS - DESARROLLO
+ * POSTS SEEDER - DEVELOPMENT
  *
- * Propósito:
- * - Crear posts (descubrimientos de fósiles) para desarrollo
- * - Datos variados con diferentes tipos de fósiles
- * - Incluye posts publicados y en borrador
- *
- * Requisitos previos:
- * - Usuarios deben existir (ejecutar 01-users primero)
- *
- * Uso:
- * - npm run seed:dev
+ * Crea posts de descubrimientos con imágenes y coordenadas
  */
 
 import { Post } from '../../models/Post';
-import { User } from '../../models/User';
 
 export const seedPosts = async (): Promise<void> => {
-  try {
-    console.log('🦴 Seeding posts (desarrollo)...');
+  console.log('🌱 Seeding posts...');
 
-    // Obtener usuarios para asignar como autores
-    const users = await User.findAll();
+  const posts = [
+    {
+      title: 'Joaquinraptor casali - Carnívoro del Cretácico',
+      summary: 'Un nuevo carnívoro de tamaño mediano que habitó La Pampa hace 80 millones de años. Sus restos fueron encontrados en formaciones del Cretácico Superior y representa una nueva especie de terópodo sudamericano. El análisis de sus dientes sugiere una dieta carnívora especializada.',
+      image_url: 'https://images.unsplash.com/photo-1564760055775-d63b17a55c44?w=800',
+      discovery_date: new Date('2023-03-15'),
+      location: 'La Pampa, Argentina',
+      latitude: -36.6167,
+      longitude: -64.2833,
+      paleontologist: 'Dr. María Fernández',
+      fossil_type: 'bones_teeth' as const,
+      geological_period: 'Cretácico Superior',
+      user_id: 2,
+      status: 'published' as const,
+      source: 'https://www.nature.com/articles/example1',
+    },
+    {
+      title: 'Qunkasaura pintiquiniestra - Dinosaurio austral',
+      summary: 'Herbívoro de gran tamaño descubierto en la Patagonia chilena. Vivió durante el Cretácico y sus restos incluyen vértebras y costillas excepcionalmente preservadas. Este hallazgo amplía nuestro conocimiento sobre la fauna de dinosaurios en el extremo sur de América.',
+      image_url: 'https://images.unsplash.com/photo-1597450001842-d8a8c0e2c9b0?w=800',
+      discovery_date: new Date('2023-06-22'),
+      location: 'Magallanes, Chile',
+      latitude: -51.7167,
+      longitude: -72.5000,
+      paleontologist: 'Dr. Carlos Muñoz',
+      fossil_type: 'bones_teeth' as const,
+      geological_period: 'Cretácico',
+      user_id: 3,
+      status: 'published' as const,
+      source: 'https://www.sciencedirect.com/example2',
+    },
+    {
+      title: 'Tyrannotitan - Gigante del Cretácico Inferior',
+      summary: 'Uno de los carnívoros más grandes que habitaron Sudamérica. Encontrado en Chubut, Argentina, este depredador podía alcanzar los 12 metros de longitud. Sus poderosas mandíbulas y dientes afilados lo convierten en uno de los terópodos más impresionantes del continente.',
+      image_url: 'https://images.unsplash.com/photo-1535525153412-5a42439a210d?w=800',
+      discovery_date: new Date('2023-01-10'),
+      location: 'Chubut, Argentina',
+      latitude: -43.3000,
+      longitude: -65.1000,
+      paleontologist: 'Dra. Ana Rodríguez',
+      fossil_type: 'bones_teeth' as const,
+      geological_period: 'Cretácico Inferior',
+      user_id: 4,
+      status: 'published' as const,
+      source: 'https://journals.plos.org/example3',
+    },
+    {
+      title: 'Ammonites gigantes del Jurásico',
+      summary: 'Colección de ammonites de tamaño excepcional encontrados en sedimentos marinos. Estos moluscos extintos muestran patrones de crecimiento únicos y proporcionan información valiosa sobre los ecosistemas marinos del Jurásico. Algunos especímenes alcanzan más de 50 cm de diámetro.',
+      image_url: 'https://images.unsplash.com/photo-1572737117164-e81e5ab18f8b?w=800',
+      discovery_date: new Date('2023-08-05'),
+      location: 'Neuquén, Argentina',
+      latitude: -38.9516,
+      longitude: -68.0591,
+      paleontologist: 'Dr. Jorge Calvo',
+      fossil_type: 'shell_exoskeletons' as const,
+      geological_period: 'Jurásico',
+      user_id: 2,
+      status: 'published' as const,
+    },
+    {
+      title: 'Bosque petrificado del Triásico',
+      summary: 'Impresiones fósiles de helechos y coníferas primitivas en excelente estado de conservación. Este yacimiento ofrece una ventana única a los ecosistemas forestales del Triásico, mostrando la diversidad de flora que existía hace más de 200 millones de años.',
+      image_url: 'https://images.unsplash.com/photo-1520982520209-3c0d5e8fc5ee?w=800',
+      discovery_date: new Date('2023-04-18'),
+      location: 'San Juan, Argentina',
+      latitude: -31.5375,
+      longitude: -68.5364,
+      paleontologist: 'Dra. Laura Salgado',
+      fossil_type: 'plant_impressions' as const,
+      geological_period: 'Triásico',
+      user_id: 5,
+      status: 'published' as const,
+    },
+    {
+      title: 'Huellas de Saurópodos en la Patagonia',
+      summary: 'Rastros fosilizados de dinosaurios herbívoros de cuello largo. Las huellas revelan el comportamiento de manada y rutas migratorias. Este descubrimiento incluye más de 100 icnitas que permiten reconstruir el paso de una gran manada.',
+      image_url: 'https://images.unsplash.com/photo-1596003906949-67221c37965c?w=800',
+      discovery_date: new Date('2023-09-30'),
+      location: 'Santa Cruz, Argentina',
+      latitude: -50.0111,
+      longitude: -68.5289,
+      paleontologist: 'Dr. Pablo Puerta',
+      fossil_type: 'tracks_traces' as const,
+      geological_period: 'Cretácico',
+      user_id: 3,
+      status: 'published' as const,
+    },
+    {
+      title: 'Insectos atrapados en ámbar cretácico',
+      summary: 'Colección de insectos perfectamente preservados en ámbar, incluyendo escarabajos, hormigas y arañas. Estos fósiles proporcionan detalles extraordinarios de la anatomía de insectos extintos y su relación con especies actuales.',
+      image_url: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800',
+      discovery_date: new Date('2023-07-12'),
+      location: 'Misiones, Argentina',
+      latitude: -27.3669,
+      longitude: -55.9003,
+      paleontologist: 'Dr. Ricardo Martínez',
+      fossil_type: 'amber_insects' as const,
+      geological_period: 'Cretácico',
+      user_id: 4,
+      status: 'published' as const,
+    },
+    {
+      title: 'Pterosaurio del Jurásico tardío - BORRADOR',
+      summary: 'Restos parciales de un reptil volador con una envergadura estimada de 5 metros. Hallazgo en proceso de estudio y clasificación. Este espécimen muestra características únicas en la morfología de las alas.',
+      image_url: 'https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w=800',
+      discovery_date: new Date('2024-01-15'),
+      location: 'Mendoza, Argentina',
+      latitude: -32.8895,
+      longitude: -68.8458,
+      paleontologist: 'Dra. María Fernández',
+      fossil_type: 'bones_teeth' as const,
+      geological_period: 'Jurásico',
+      user_id: 2,
+      status: 'draft' as const,
+    },
+  ];
 
-    if (!users || users.length === 0) {
-      console.log('⚠️  No hay usuarios. Ejecuta el seeder de usuarios primero.');
-      console.log('💡 Comando: npm run seed:dev');
-      return;
-    }
-
-    // Datos de posts variados para desarrollo
-    const postsData = [
-      // Post 1: T-Rex
-      {
-        title: 'Descubrimiento de un Tiranosaurio Rex en Patagonia',
-        summary: 'Un increíble hallazgo paleontológico en el sur de Argentina revela restos fósiles de un T-Rex casi completo. Este descubrimiento aporta nueva información sobre su morfología y comportamiento durante el Cretácico Superior.',
-        image_url: 'https://example.com/images/t-rex-fossil.jpg',
-        discovery_date: new Date('2022-03-15'),
-        location: 'Patagonia, Argentina',
-        paleontologist: 'Dr. Luis Herrera',
-        fossil_type: 'bones_teeth' as const,
-        geological_period: 'Cretácico Superior',
-        user_id: users[0].id,
-        status: 'published' as const,
-        source: 'Revista Paleontology Today',
-      },
-
-      // Post 2: Plantas del Sahara
-      {
-        title: 'Fósiles de plantas prehistóricas en el Sahara',
-        summary: 'Se descubrieron impresiones fósiles de plantas en capas rocosas del Sahara, demostrando que esta región fue un ecosistema húmedo hace millones de años.',
-        image_url: 'https://example.com/images/sahara-plants.jpg',
-        discovery_date: new Date('2021-08-09'),
-        location: 'Desierto del Sahara, Egipto',
-        paleontologist: 'Dra. Amina Khalil',
-        fossil_type: 'plant_impressions' as const,
-        geological_period: 'Jurásico',
-        user_id: users[1]?.id || users[0].id,
-        status: 'published' as const,
-        source: 'Egyptian Journal of Geoscience',
-      },
-
-      // Post 3: Insectos en ámbar
-      {
-        title: 'Insectos atrapados en ámbar báltico',
-        summary: 'Restos de insectos perfectamente conservados en ámbar permiten estudiar la biodiversidad del Eoceno con un nivel de detalle sorprendente.',
-        image_url: 'https://example.com/images/amber-insects.jpg',
-        discovery_date: new Date('2020-11-22'),
-        location: 'Bosques bálticos, Polonia',
-        paleontologist: 'Dr. Erik Novak',
-        fossil_type: 'amber_insects' as const,
-        geological_period: 'Eoceno',
-        user_id: users[2]?.id || users[0].id,
-        status: 'published' as const,
-        source: 'Nature Historical Biology',
-      },
-
-      // Post 4: Huellas de dinosaurio (borrador)
-      {
-        title: 'Huella de dinosaurio descubierta en Utah',
-        summary: 'Un grupo de paleontólogos encontró una serie de huellas fosilizadas que revelan el comportamiento de manadas de dinosaurios carnívoros.',
-        image_url: 'https://example.com/images/dino-tracks.jpg',
-        discovery_date: new Date('2023-04-30'),
-        location: 'Utah, Estados Unidos',
-        paleontologist: 'Dr. Amanda Lewis',
-        fossil_type: 'tracks_traces' as const,
-        geological_period: 'Cretácico Inferior',
-        user_id: users[1]?.id || users[0].id,
-        status: 'draft' as const,
-        source: 'Journal of Vertebrate Paleontology',
-      },
-
-      // Post 5: Trilobite
-      {
-        title: 'Trilobite perfectamente preservado en Marruecos',
-        summary: 'Un trilobite de 450 millones de años encontrado en excelente estado de conservación en una cantera de Marruecos.',
-        image_url: 'https://example.com/images/trilobite.jpg',
-        discovery_date: new Date('2023-01-12'),
-        location: 'Erfoud, Marruecos',
-        paleontologist: 'Dr. Hassan Bennani',
-        fossil_type: 'shell_exoskeletons' as const,
-        geological_period: 'Ordovícico',
-        user_id: users[3]?.id || users[0].id,
-        status: 'published' as const,
-        source: 'Moroccan Journal of Paleontology',
-      },
-
-      // Post 6: Velociraptor (borrador)
-      {
-        title: 'Esqueleto completo de Velociraptor en Mongolia',
-        summary: 'Descubrimiento de un esqueleto casi completo de Velociraptor que preserva detalles únicos de su estructura ósea.',
-        discovery_date: new Date('2023-06-20'),
-        location: 'Desierto de Gobi, Mongolia',
-        paleontologist: 'Dra. Oyuna Baatar',
-        fossil_type: 'bones_teeth' as const,
-        geological_period: 'Cretácico Superior',
-        user_id: users[4]?.id || users[0].id,
-        status: 'draft' as const,
-      },
-    ];
-
-    // Insertar posts en la base de datos
-    const createdPosts = await Post.bulkCreate(postsData);
-
-    console.log(`✅ ${createdPosts.length} posts creados exitosamente`);
-    console.log(`   📊 Publicados: ${createdPosts.filter(p => p.status === 'published').length}`);
-    console.log(`   📝 Borradores: ${createdPosts.filter(p => p.status === 'draft').length}`);
-
-  } catch (error: any) {
-    console.error('❌ Error seeding posts:', error.message);
-    throw error;
+  for (const postData of posts) {
+    await Post.create(postData);
   }
-};
 
-export default seedPosts;
+  console.log('✅ Posts seeded successfully');
+};

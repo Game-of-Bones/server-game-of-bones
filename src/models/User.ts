@@ -110,7 +110,6 @@ export class User extends Model {
 
   // ============================================
   // RELACIONES
-  // ⚠️ NO importes las clases aquí, usa función lazy
   // ============================================
 
   @HasMany(() => require('./Post').Post)

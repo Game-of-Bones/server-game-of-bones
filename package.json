@@ -8,17 +8,13 @@
     "dev:test": "cross-env NODE_ENV=test nodemon --exec ts-node src/server.ts --silent --verbose",
     "start": "node dist/server.js",
     "build": "tsc",
-
     "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:coverage": "cross-env NODE_ENV=test jest --coverage",
-
     "seed:dev": "cross-env NODE_ENV=development ts-node src/seeders/dev/runDevSeeders.ts",
     "seed:test": "cross-env NODE_ENV=test ts-node src/seeders/test/runTestSeeders.ts",
     "init:test": "cross-env NODE_ENV=test ts-node src/database/initTest.ts",
-
     "db:fresh": "ts-node -e \"require('./src/models').syncDatabase(true).then(() => process.exit(0))\"",
-
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
@@ -42,11 +38,14 @@
   "homepage": "https://github.com/Game-of-Bones/server-game-of-bones#readme",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "mysql2": "^3.15.1",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",

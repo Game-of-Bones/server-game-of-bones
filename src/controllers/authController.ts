@@ -46,7 +46,7 @@ export const register = asyncHandler(
       password_hash: password,
       role: role === 'admin' ? 'admin' : 'user',
     });
-    // Línea 50-60 en register
+
     const jwtSecret: Secret = process.env.JWT_SECRET || 'secret';
     const jwtExpiresIn: string = process.env.JWT_EXPIRES_IN || '7d';
 
