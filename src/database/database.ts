@@ -44,7 +44,7 @@ const sequelize = new Sequelize({
   port: config.port,
   dialect: 'mysql',
 
-  // Modelos con decoradores
+  // Modelos con decoradores (usando las CLASES, no las interfaces)
   models: [User, Post, Comment, Like],
 
   // Pool de conexiones

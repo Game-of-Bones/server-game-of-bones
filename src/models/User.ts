@@ -14,8 +14,6 @@ import {
   BeforeUpdate,
 } from 'sequelize-typescript';
 import bcrypt from 'bcrypt';
-
-
 import { Post } from './Post';
 import { Comment } from './Comment';
 import { Like } from './Like';
@@ -29,6 +27,7 @@ export interface CreateUserDTO {
   email: string;
   password: string;
   role?: 'admin' | 'user';
+  avatar_url?: string; // ✅ AÑADIDO
 }
 
 export interface LoginDTO {
@@ -41,6 +40,7 @@ export interface UserResponse {
   username: string;
   email: string;
   role: 'admin' | 'user';
+  avatar_url?: string | null; // ✅ AÑADIDO
   created_at: Date;
 }
 
@@ -104,6 +104,16 @@ export class User extends Model {
     defaultValue: 'user',
   })
   role!: 'admin' | 'user';
+
+  // ✅ CAMPO NUEVO: avatar_url
+  @Column({
+    type: DataType.STRING(500),
+    allowNull: true,
+    validate: {
+      isUrl: true,
+    },
+  })
+  avatar_url?: string | null;
 
   // ✅ Declarar deletedAt para soft delete
   declare deletedAt?: Date;
