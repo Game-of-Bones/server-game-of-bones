@@ -14,6 +14,15 @@ import { Post, CreatePostDTO, UpdatePostDTO, FossilType, PostStatus } from '../m
 import { User } from '../models/User';
 import { asyncHandler } from '../middleware/handleError';
 
+// ✅ Tipos válidos de fósiles
+const VALID_FOSSIL_TYPES = [
+  'bones_teeth',
+  'shell_exoskeletons',
+  'plant_impressions',
+  'tracks_traces',
+  'amber_insects'
+];
+
 /**
  * Obtener todos los posts
  * GET /api/posts
@@ -54,16 +63,30 @@ export const getAllPosts = asyncHandler(async (req: Request, res: Response): Pro
       {
         model: User,
         as: 'author',
-        attributes: ['id', 'username', 'email'],
+        attributes: ['id', 'username', 'email', 'avatar_url'],
       },
     ],
     order: [['created_at', 'DESC']],
   });
 
+  // ✅ CORRECCIÓN: Serializar posts con author incluido
+  const serializedPosts = posts.map(post => {
+    const postJson = post.toJSON();
+    return {
+      ...postJson,
+      author: post.author ? {
+        id: post.author.id,
+        username: post.author.username,
+        email: post.author.email,
+        avatar_url: post.author.avatar_url,
+      } : undefined,
+    };
+  });
+
   res.status(200).json({
     success: true,
     data: {
-      posts,
+      posts: serializedPosts,
       pagination: {
         total: count,
         page: pageNum,
@@ -86,7 +109,7 @@ export const getPostById = asyncHandler(async (req: Request, res: Response): Pro
       {
         model: User,
         as: 'author',
-        attributes: ['id', 'username', 'email'],
+        attributes: ['id', 'username', 'email', 'avatar_url'],
       },
     ],
   });
@@ -114,10 +137,17 @@ export const getPostById = asyncHandler(async (req: Request, res: Response): Pro
   const likes_count = await post.getLikesCount();
   const comments_count = await post.getCommentsCount();
 
+  // ✅ CORRECCIÓN: Incluir author en la respuesta
   res.status(200).json({
     success: true,
     data: {
       ...post.toJSON(),
+      author: post.author ? {
+        id: post.author.id,
+        username: post.author.username,
+        email: post.author.email,
+        avatar_url: post.author.avatar_url,
+      } : undefined,
       likes_count,
       comments_count,
     },
@@ -130,14 +160,49 @@ export const getPostById = asyncHandler(async (req: Request, res: Response): Pro
  * Requiere autenticación
  */
 export const createPost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { title, summary, image_url, discovery_date, location, paleontologist, fossil_type, geological_period, status, source } = req.body;
+  const {
+    title,
+    summary,
+    post_content,
+    image_url,
+    discovery_date,
+    location,
+    latitude,
+    longitude,
+    paleontologist,
+    fossil_type,
+    geological_period,
+    status,
+    source
+  } = req.body;
+
+  // ✅ Validar campos requeridos
+  if (!title || !summary || !post_content) {
+    res.status(400).json({
+      success: false,
+      message: 'Title, summary y post_content son campos requeridos',
+    });
+    return;
+  }
+
+  // ✅ CORRECCIÓN: Validar fossil_type antes de crear
+  if (fossil_type && !VALID_FOSSIL_TYPES.includes(fossil_type)) {
+    res.status(400).json({
+      success: false,
+      message: `Tipo de fósil inválido. Debe ser uno de: ${VALID_FOSSIL_TYPES.join(', ')}`,
+    });
+    return;
+  }
 
   const post = await Post.create({
     title,
     summary,
+    post_content,
     image_url,
     discovery_date: discovery_date ? new Date(discovery_date) : undefined,
     location,
+    latitude,
+    longitude,
     paleontologist,
     fossil_type: fossil_type || 'bones_teeth',
     geological_period,
@@ -184,6 +249,15 @@ export const updatePost = asyncHandler(async (req: Request, res: Response): Prom
 
   // No permitir cambiar el user_id
   delete (updateData as any).user_id;
+
+  // ✅ Validar fossil_type si se está actualizando
+  if (updateData.fossil_type && !VALID_FOSSIL_TYPES.includes(updateData.fossil_type)) {
+    res.status(400).json({
+      success: false,
+      message: `Tipo de fósil inválido. Debe ser uno de: ${VALID_FOSSIL_TYPES.join(', ')}`,
+    });
+    return;
+  }
 
   await post.update(updateData);
 

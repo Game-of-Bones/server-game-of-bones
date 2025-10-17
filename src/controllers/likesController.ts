@@ -26,11 +26,15 @@ export const toggleLike = async (req: Request, res: Response) => {
       // Si existe → eliminar (toggle off)
       await existing.destroy();
       const likes_count = await Like.count({ where: { post_id: postId } });
+
       return res.status(200).json({
         success: true,
-        liked: false,
         message: 'Like eliminado',
-        likes_count,
+        data: {
+          liked: false,
+          postId: postId,
+          likes_count,
+        },
       });
     }
 
@@ -40,9 +44,12 @@ export const toggleLike = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       success: true,
-      liked: true,
       message: 'Like agregado',
-      likes_count,
+      data: {
+        liked: true,
+        postId: postId,
+        likes_count,
+      },
     });
   } catch (error: any) {
     console.error('❌ Error en toggleLike:', error);

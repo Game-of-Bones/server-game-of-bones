@@ -40,6 +40,7 @@ export type PostStatus = 'draft' | 'published';
 export interface CreatePostDTO {
   title: string;
   summary: string;
+  post_content: string; // ✅ AÑADIDO
   image_url?: string;
   discovery_date?: Date;
   location?: string;
@@ -56,6 +57,7 @@ export interface CreatePostDTO {
 export interface UpdatePostDTO {
   title?: string;
   summary?: string;
+  post_content?: string; // ✅ AÑADIDO
   image_url?: string;
   discovery_date?: Date;
   location?: string;
@@ -72,6 +74,7 @@ export interface PostResponse {
   id: number;
   title: string;
   summary: string;
+  post_content: string; // ✅ AÑADIDO
   image_url?: string;
   discovery_date?: Date;
   location?: string;
@@ -127,10 +130,21 @@ export class Post extends Model {
     allowNull: false,
     validate: {
       notEmpty: true,
-      len: [20, 5000],
+      len: [20, 1000],
     },
   })
   summary!: string;
+
+  // ✅ CAMPO NUEVO: post_content (contenido detallado del post)
+  @Column({
+    type: DataType.TEXT,
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+      len: [50, 10000], // Contenido más extenso que el summary
+    },
+  })
+  post_content!: string;
 
   @AllowNull(true)
   @Column({
@@ -222,9 +236,25 @@ export class Post extends Model {
   }
 
   toJSON(): PostResponse {
-    const values = { ...this.get() };
-    delete values.deleted_at;
-    return values as PostResponse;
+    return {
+      id: this.id,
+      title: this.title,
+      summary: this.summary,
+      post_content: this.post_content, // ✅ Ahora se incluye explícitamente
+      image_url: this.image_url,
+      discovery_date: this.discovery_date,
+      location: this.location,
+      latitude: this.latitude,
+      longitude: this.longitude,
+      paleontologist: this.paleontologist,
+      fossil_type: this.fossil_type,
+      geological_period: this.geological_period,
+      user_id: this.user_id,
+      status: this.status,
+      source: this.source,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt,
+    };
   }
 }
 

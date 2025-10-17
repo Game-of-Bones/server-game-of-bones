@@ -1,13 +1,5 @@
 /**
  * COMMENTS ENDPOINTS TESTS
- *
- * Cubre:
- * - Crear comentario (auth)
- * - Validaciones y 401 sin token
- * - Listar comentarios de un post (público)
- * - Obtener comentario por id (público)
- * - Actualizar comentario (solo autor / auth)
- * - Eliminar comentario (soft delete / auth)
  */
 
 import request from 'supertest';
@@ -22,12 +14,10 @@ describe('Comments API', () => {
   let postId: number;
 
   beforeEach(async () => {
-    // Estado limpio por test
     await Comment.destroy({ where: {}, force: true });
     await Post.destroy({ where: {}, force: true });
     await User.destroy({ where: {}, force: true });
 
-    // 1) Usuario + token válido
     const reg = await request(app)
       .post('/api/auth/register')
       .send({
@@ -40,11 +30,11 @@ describe('Comments API', () => {
     authToken = reg.body.data.token;
     userId = reg.body.data.user.id;
 
-    // 2) Post publicado para comentar
+    // ✅ Post con post_content añadido
     const post = await Post.create({
       title: 'Post para comentarios',
-      summary:
-        'Entrada publicada para probar la API de comentarios en los tests automáticos.',
+      summary: 'Entrada publicada para probar la API de comentarios en los tests automáticos.',
+      post_content: 'Contenido detallado del post para comentarios. Este es un descubrimiento paleontológico fascinante que merece ser comentado por la comunidad científica.',
       fossil_type: 'bones_teeth',
       user_id: userId,
       status: 'published',
@@ -58,8 +48,7 @@ describe('Comments API', () => {
         .post(`/api/posts/${postId}/comments`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          content:
-            '¡Increíble hallazgo! Este fósil podría aportar mucha información.',
+          content: '¡Increíble hallazgo! Este fósil podría aportar mucha información.',
         })
         .expect(201);
 
@@ -94,14 +83,13 @@ describe('Comments API', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ content: 'Comentario para post inexistente' });
 
-      expect([404, 400]).toContain(res.status); // según cómo manejes la inexistencia
+      expect([404, 400]).toContain(res.status);
       expect(res.body.success).toBe(false);
     });
   });
 
   describe('GET /api/posts/:postId/comments', () => {
     test('Debe listar comentarios de un post (público)', async () => {
-      // Crear 2 comentarios
       await request(app)
         .post(`/api/posts/${postId}/comments`)
         .set('Authorization', `Bearer ${authToken}`)
@@ -224,14 +212,13 @@ describe('Comments API', () => {
 
       expect(res.body.success).toBe(true);
 
-      // Verificación de soft delete en DB (paranoid: false)
       const deleted = await Comment.findOne({
         where: { id },
         paranoid: false,
       });
 
       expect(deleted).toBeTruthy();
-      expect(deleted?.deletedAt).not.toBeNull(); // 👈 camelCase en TS
+      expect(deleted?.deletedAt).not.toBeNull();
     });
 
     test('Debe retornar 401 sin autenticación', async () => {
@@ -256,4 +243,3 @@ describe('Comments API', () => {
     });
   });
 });
-
