@@ -290,7 +290,6 @@ Este proyecto fue desarrollado por:
 | **Nicole Guevara** | Full Stack Developer | [@nicole-github](https://github.com/nicolegugu93) |
 | **Esther Tapias** | Full Stack Developer | [@esther-github](https://github.com/EstherTapias) |
 
-> 💡 **Nota:** Reemplaza los enlaces de GitHub con los perfiles reales de cada integrante.
 
 ## 🤝 Contribuir
 
